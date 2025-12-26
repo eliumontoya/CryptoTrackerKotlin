@@ -1,4 +1,4 @@
-package info.eliumontoyasadec.cryptotracker.room.queries
+package info.eliumontoyasadec.cryptotracker.ui.queries
 
 data class PortfolioWalletTotalRow(
     val portfolioId: Long,

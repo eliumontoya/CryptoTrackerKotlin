@@ -1,10 +1,10 @@
-package info.eliumontoyasadec.cryptotracker.room.repositories
+package info.eliumontoyasadec.cryptotracker.domain.repositories
 
 import androidx.room.withTransaction
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.room.entities.HoldingEntity
 import info.eliumontoyasadec.cryptotracker.room.entities.TransactionEntity
-import info.eliumontoyasadec.cryptotracker.room.entities.TransactionType
+import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 
 class LedgerRepository(
     private val db: AppDatabase
@@ -42,12 +42,15 @@ class LedgerRepository(
 
     private fun TransactionEntity.toHoldingDelta(): Double {
         return when (type) {
-            TransactionType.BUY,
-            TransactionType.TRANSFER_IN,
-            TransactionType.ADJUSTMENT -> quantity
+            MovementType.BUY,
+            MovementType.DEPOSIT,
+            MovementType.TRANSFER_IN,
+            MovementType.ADJUSTMENT -> quantity
 
-            TransactionType.SELL,
-            TransactionType.TRANSFER_OUT -> -quantity
+            MovementType.SELL,
+            MovementType.WITHDRAW,
+            MovementType.TRANSFER_OUT,
+            MovementType.FEE -> -quantity
         }
     }
 }

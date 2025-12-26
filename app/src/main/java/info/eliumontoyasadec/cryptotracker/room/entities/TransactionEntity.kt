@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 import java.time.Instant
 
 @Entity(
@@ -34,7 +35,7 @@ data class TransactionEntity(
     val walletId: Long,
     val cryptoSymbol: String,
 
-    val type: TransactionType,
+    val type: MovementType,
 
     // Cantidad de crypto (ej. 0.01 BTC)
     val quantity: Double,

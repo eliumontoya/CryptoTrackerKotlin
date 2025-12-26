@@ -2,9 +2,9 @@ package info.eliumontoyasadec.cryptotracker.room.dao
 
 import androidx.room.Dao
 import androidx.room.Query
-import info.eliumontoyasadec.cryptotracker.room.queries.PortfolioTotalRow
-import info.eliumontoyasadec.cryptotracker.room.queries.PortfolioWalletTotalRow
-import info.eliumontoyasadec.cryptotracker.room.queries.WalletHoldingRow
+import info.eliumontoyasadec.cryptotracker.ui.queries.PortfolioTotalRow
+import info.eliumontoyasadec.cryptotracker.ui.queries.PortfolioWalletTotalRow
+import info.eliumontoyasadec.cryptotracker.ui.queries.WalletHoldingRow
 
 @Dao
 interface PortfolioSummaryDao {
