@@ -10,8 +10,10 @@ data class Movement(
     val price: Double?,
     val feeQuantity: Double,
     val timestamp: Long,
-    val notes: String?
-){
+    val notes: String?,
+    val groupId: String? = null,
+
+    ){
     /** Equivalente a MovementToInsert(...) */
     constructor(
         portfolioId: String,
@@ -22,9 +24,11 @@ data class Movement(
         price: Double?,
         feeQuantity: Double,
         timestamp: Long,
-        notes: String?
+        notes: String?,
+        groupId: String? = null
     ) : this(
         id = "",
+        groupId = groupId,
         portfolioId = portfolioId,
         walletId = walletId,
         assetId = assetId,
@@ -43,9 +47,12 @@ data class Movement(
         price: Double?,
         feeQuantity: Double,
         timestamp: Long,
-        notes: String?
+        notes: String?,
+        groupId: String? = null
     ) : this(
         id = "",
+        groupId = groupId,
+
         portfolioId = "",
         walletId = "",
         assetId = "",

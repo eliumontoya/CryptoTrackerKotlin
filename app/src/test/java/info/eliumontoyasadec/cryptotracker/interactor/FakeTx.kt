@@ -64,7 +64,8 @@ class FakeMovementRepo : MovementRepository {
             price = movement.price,
             feeQuantity = movement.feeQuantity,
             timestamp = movement.timestamp,
-            notes = movement.notes
+            notes = movement.notes,
+            groupId = movement.groupId
         )
 
         store[id] = movement
@@ -85,7 +86,8 @@ class FakeMovementRepo : MovementRepository {
             quantity = update.quantity ?: existing.quantity,
             feeQuantity = update.feeQuantity ?: existing.feeQuantity,
             price = update.price ?: existing.price,
-            timestamp = update.timestamp ?: existing.timestamp
+            timestamp = update.timestamp ?: existing.timestamp,
+            groupId = update.groupId ?: existing.groupId
         )
 
         lastUpdateId = movementId
