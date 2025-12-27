@@ -17,23 +17,26 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+// -------- Domain-ish UI models (still fake) --------
 
 enum class MovementMode { IN, OUT, BETWEEN, SWAP }
 
-private enum class WalletFilter(val label: String) {
+enum class WalletFilter(val label: String) {
     ALL("Todas"),
     METAMASK("Metamask"),
     BYBIT("ByBit"),
     PHANTOM("Phantom")
 }
 
-private enum class CryptoFilter(val label: String) {
+enum class CryptoFilter(val label: String) {
     ALL("Todas"),
     BTC("BTC"),
     ETH("ETH"),
@@ -42,7 +45,7 @@ private enum class CryptoFilter(val label: String) {
     AIXBT("AIXBT")
 }
 
-private data class MovementRow(
+data class MovementRow(
     val id: String,
     val dateLabel: String,
     val wallet: WalletFilter,
@@ -51,18 +54,24 @@ private data class MovementRow(
     val details: String
 )
 
+// -------- UI State --------
+
+data class MovementsUiState(
+    val selectedWallet: WalletFilter = WalletFilter.ALL,
+    val selectedCrypto: CryptoFilter = CryptoFilter.ALL,
+    val rows: List<MovementRow> = emptyList(),
+    val filteredRows: List<MovementRow> = emptyList()
+)
+
+// -------- Composable --------
+
 @Composable
-fun MovementsScreen(title: String, mode: MovementMode) {
-    // UI-only filter state
-    var walletFilter by remember { mutableStateOf(WalletFilter.ALL) }
-    var cryptoFilter by remember { mutableStateOf(CryptoFilter.ALL) }
-
-    val allRows = remember(mode) { fakeRowsFor(mode) }
-    val filteredRows = allRows.filter { row ->
-        (walletFilter == WalletFilter.ALL || row.wallet == walletFilter) &&
-            (cryptoFilter == CryptoFilter.ALL || row.crypto == cryptoFilter)
-    }
-
+fun MovementsScreen(
+    title: String,
+    state: MovementsUiState,
+    onSelectWallet: (WalletFilter) -> Unit,
+    onSelectCrypto: (CryptoFilter) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -83,9 +92,9 @@ fun MovementsScreen(title: String, mode: MovementMode) {
                 Text("Cartera", style = MaterialTheme.typography.labelLarge)
                 ChipRow(
                     options = WalletFilter.entries,
-                    selected = walletFilter,
+                    selected = state.selectedWallet,
                     labelOf = { it.label },
-                    onSelect = { walletFilter = it }
+                    onSelect = onSelectWallet
                 )
 
                 Spacer(Modifier.height(6.dp))
@@ -93,9 +102,9 @@ fun MovementsScreen(title: String, mode: MovementMode) {
                 Text("Crypto", style = MaterialTheme.typography.labelLarge)
                 ChipRow(
                     options = CryptoFilter.entries,
-                    selected = cryptoFilter,
+                    selected = state.selectedCrypto,
                     labelOf = { it.label },
-                    onSelect = { cryptoFilter = it }
+                    onSelect = onSelectCrypto
                 )
             }
         }
@@ -111,11 +120,11 @@ fun MovementsScreen(title: String, mode: MovementMode) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Movimientos", style = MaterialTheme.typography.titleMedium)
-                    Text("${filteredRows.size}", style = MaterialTheme.typography.labelLarge)
+                    Text("${state.filteredRows.size}", style = MaterialTheme.typography.labelLarge)
                 }
                 Divider()
 
-                if (filteredRows.isEmpty()) {
+                if (state.filteredRows.isEmpty()) {
                     Text(
                         text = "No hay movimientos con los filtros actuales.",
                         style = MaterialTheme.typography.bodyMedium
@@ -125,7 +134,7 @@ fun MovementsScreen(title: String, mode: MovementMode) {
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(filteredRows, key = { it.id }) { row ->
+                        items(state.filteredRows, key = { it.id }) { row ->
                             MovementRowItem(row)
                             Divider()
                         }
@@ -171,6 +180,52 @@ private fun MovementRowItem(row: MovementRow) {
         Text(row.details, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+// -------- ViewModel (fake data) --------
+
+class MovementsViewModel(private val mode: MovementMode) : ViewModel() {
+
+    private val allRows: List<MovementRow> = fakeRowsFor(mode)
+
+    private val _state = MutableStateFlow(
+        MovementsUiState(
+            selectedWallet = WalletFilter.ALL,
+            selectedCrypto = CryptoFilter.ALL,
+            rows = allRows,
+            filteredRows = allRows
+        )
+    )
+    val state: StateFlow<MovementsUiState> = _state.asStateFlow()
+
+    fun selectWallet(wallet: WalletFilter) {
+        val next = _state.value.copy(selectedWallet = wallet)
+        _state.value = next.copy(filteredRows = applyFilters(next))
+    }
+
+    fun selectCrypto(crypto: CryptoFilter) {
+        val next = _state.value.copy(selectedCrypto = crypto)
+        _state.value = next.copy(filteredRows = applyFilters(next))
+    }
+
+    private fun applyFilters(state: MovementsUiState): List<MovementRow> {
+        return state.rows.filter { row ->
+            (state.selectedWallet == WalletFilter.ALL || row.wallet == state.selectedWallet) &&
+                (state.selectedCrypto == CryptoFilter.ALL || row.crypto == state.selectedCrypto)
+        }
+    }
+
+    class Factory(private val mode: MovementMode) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(MovementsViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return MovementsViewModel(mode) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+}
+
+// -------- Fake data --------
 
 private fun fakeRowsFor(mode: MovementMode): List<MovementRow> {
     return when (mode) {

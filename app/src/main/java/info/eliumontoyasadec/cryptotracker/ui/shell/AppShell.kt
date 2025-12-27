@@ -22,7 +22,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioFakeData
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioViewModel
 import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementMode
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsScreen
@@ -35,6 +37,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownRow
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
+import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,8 +135,11 @@ fun AppShell() {
                 modifier = Modifier.padding(padding)
             ) {
                 composable(AppDestination.Portfolio.route) {
+                    val vm: PortfolioViewModel = viewModel()
+                    val state = vm.state.collectAsState().value
+
                     PortfolioScreen(
-                        state = PortfolioFakeData.sample,
+                        state = state,
                         onRowClick = { symbol ->
                             navController.navigate("crypto_detail/$symbol") { launchSingleTop = true }
                         }
@@ -157,16 +163,60 @@ fun AppShell() {
                     )                }
 
                 composable(AppDestination.InMovements.route) {
-                    MovementsScreen("Movimientos de Entrada", MovementMode.IN)
+                    val vm: MovementsViewModel = viewModel(
+                        key = "movements-in",
+                        factory = MovementsViewModel.Factory(MovementMode.IN)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    MovementsScreen(
+                        title = "Movimientos de Entrada",
+                        state = state,
+                        onSelectWallet = vm::selectWallet,
+                        onSelectCrypto = vm::selectCrypto
+                    )
                 }
                 composable(AppDestination.OutMovements.route) {
-                    MovementsScreen("Movimientos de Salida", MovementMode.OUT)
+                    val vm: MovementsViewModel = viewModel(
+                        key = "movements-out",
+                        factory = MovementsViewModel.Factory(MovementMode.OUT)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    MovementsScreen(
+                        title = "Movimientos de Salida",
+                        state = state,
+                        onSelectWallet = vm::selectWallet,
+                        onSelectCrypto = vm::selectCrypto
+                    )
                 }
                 composable(AppDestination.BetweenWallets.route) {
-                    MovementsScreen("Movimientos Entre Carteras", MovementMode.BETWEEN)
+                    val vm: MovementsViewModel = viewModel(
+                        key = "movements-between",
+                        factory = MovementsViewModel.Factory(MovementMode.BETWEEN)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    MovementsScreen(
+                        title = "Movimientos Entre Carteras",
+                        state = state,
+                        onSelectWallet = vm::selectWallet,
+                        onSelectCrypto = vm::selectCrypto
+                    )
                 }
                 composable(AppDestination.Swaps.route) {
-                    MovementsScreen("Movimientos de Swaps", MovementMode.SWAP)
+                    val vm: MovementsViewModel = viewModel(
+                        key = "movements-swap",
+                        factory = MovementsViewModel.Factory(MovementMode.SWAP)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    MovementsScreen(
+                        title = "Movimientos de Swaps",
+                        state = state,
+                        onSelectWallet = vm::selectWallet,
+                        onSelectCrypto = vm::selectCrypto
+                    )
                 }
 
                 composable(AppDestination.Admin.route) {
