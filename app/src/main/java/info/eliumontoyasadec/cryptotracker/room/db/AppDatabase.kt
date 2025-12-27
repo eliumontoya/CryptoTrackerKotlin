@@ -12,6 +12,7 @@ import info.eliumontoyasadec.cryptotracker.room.dao.PortfolioDao
 import info.eliumontoyasadec.cryptotracker.room.dao.PortfolioSummaryDao
 import info.eliumontoyasadec.cryptotracker.room.dao.TransactionDao
 import info.eliumontoyasadec.cryptotracker.room.dao.WalletDao
+import info.eliumontoyasadec.cryptotracker.room.queries.PortfolioQueriesDao
 import info.eliumontoyasadec.cryptotracker.room.entities.CryptoEntity
 import info.eliumontoyasadec.cryptotracker.room.entities.FiatEntity
 import info.eliumontoyasadec.cryptotracker.room.entities.HoldingEntity
@@ -28,7 +29,7 @@ import info.eliumontoyasadec.cryptotracker.room.entities.WalletEntity
         HoldingEntity::class,
         TransactionEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -41,6 +42,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun holdingDao(): HoldingDao
     abstract fun transactionDao(): TransactionDao
     abstract fun portfolioSummaryDao(): PortfolioSummaryDao
+
+    // Read-only aggregated queries for UI
+    abstract fun portfolioQueriesDao(): PortfolioQueriesDao
 
     companion object {
         private const val DB_NAME = "cryptotracker.db"

@@ -1,0 +1,4 @@
+package info.eliumontoyasadec.cryptotracker.domain.views
+
+class CryptoHoldingRowView {
+}

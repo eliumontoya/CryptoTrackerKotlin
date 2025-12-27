@@ -18,6 +18,16 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    buildFeatures {
+        compose = true
+        viewBinding = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.8"
+    }
+
     configurations.configureEach {
         exclude(group = "com.intellij", module = "annotations")
     }
@@ -53,7 +63,7 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
 
     // ROOM - code generation (KSP)
-    implementation("androidx.room:room-compiler:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     implementation("androidx.core:core:1.13.1")
@@ -61,6 +71,28 @@ dependencies {
 
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("com.google.android.material:material:1.13.0")
+
+
+    // BOM (maneja versiones compatibles)
+    implementation(platform("androidx.compose:compose-bom:2024.05.00"))
+
+    // Core Compose
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
+
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.compose.material:material-icons-extended")
+
+
+    // Activity (para setContent)
+    implementation("androidx.activity:activity-compose:1.9.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
+    implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
+
+    // Debug / Preview
+    debugImplementation("androidx.compose.ui:ui-tooling")
 
 
     testImplementation("junit:junit:4.13.2")

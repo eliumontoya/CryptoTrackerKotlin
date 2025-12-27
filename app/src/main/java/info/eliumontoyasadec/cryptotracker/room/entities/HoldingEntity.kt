@@ -32,6 +32,16 @@ data class HoldingEntity(
     val holdingId: Long = 0,
     val walletId: Long,
     val cryptoSymbol: String,
+
+    // Net position
     val quantity: Double,
+
+    // Cost basis still allocated to the remaining quantity (USD)
+    val costUsd: Double = 0.0,
+
+    // Realized totals from sells (USD). Useful for portfolio summaries.
+    val realizedSalesUsd: Double = 0.0,
+    val realizedPnlUsd: Double = 0.0,
+
     val updatedAt: Long
 )
