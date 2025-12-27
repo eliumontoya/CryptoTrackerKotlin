@@ -48,6 +48,17 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailViewModel
 
+// UI-only filter state (visual feedback only; not wired to ViewModels yet)
+data class FilterUiState(
+    val wallet: String = "Todas",
+    val crypto: String = "Todas"
+) {
+    val hasActive: Boolean get() = wallet != "Todas" || crypto != "Todas"
+    val label: String get() = "Filtros: $wallet · $crypto"
+
+    fun cleared(): FilterUiState = FilterUiState()
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppShell() {
@@ -61,8 +72,7 @@ fun AppShell() {
     var showRefreshDialog by remember { mutableStateOf(false) }
 
     // UI-only (fake) active filters for visual feedback in TopAppBar
-    var activeWalletFilter by remember { mutableStateOf("Todas") }
-    var activeCryptoFilter by remember { mutableStateOf("Todas") }
+    var filters by remember { mutableStateOf(FilterUiState()) }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -124,17 +134,13 @@ fun AppShell() {
                     },
                     actions = {
                         if (isListScreen) {
-                            val hasActiveFilters = activeWalletFilter != "Todas" || activeCryptoFilter != "Todas"
-                            if (hasActiveFilters) {
+                            if (filters.hasActive) {
                                 Text(
-                                    text = "Filtros: $activeWalletFilter · $activeCryptoFilter",
+                                    text = filters.label,
                                     style = MaterialTheme.typography.labelLarge,
                                     modifier = Modifier.padding(end = 8.dp)
                                 )
-                                IconButton(onClick = {
-                                    activeWalletFilter = "Todas"
-                                    activeCryptoFilter = "Todas"
-                                }) {
+                                IconButton(onClick = { filters = filters.cleared() }) {
                                     Icon(Icons.Filled.Close, contentDescription = "Limpiar filtros")
                                 }
                             }
@@ -294,8 +300,8 @@ fun AppShell() {
 
     if (showFilterDialog) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        var selectedWallet by remember { mutableStateOf(activeWalletFilter) }
-        var selectedCrypto by remember { mutableStateOf(activeCryptoFilter) }
+        var selectedWallet by remember { mutableStateOf(filters.wallet) }
+        var selectedCrypto by remember { mutableStateOf(filters.crypto) }
 
         ModalBottomSheet(
             onDismissRequest = { showFilterDialog = false },
@@ -351,8 +357,7 @@ fun AppShell() {
                 ) {
                     TextButton(onClick = { showFilterDialog = false }) { Text("Cancelar") }
                     TextButton(onClick = {
-                        activeWalletFilter = selectedWallet
-                        activeCryptoFilter = selectedCrypto
+                        filters = FilterUiState(wallet = selectedWallet, crypto = selectedCrypto)
                         showFilterDialog = false
                     }) { Text("Aplicar") }
                 }
