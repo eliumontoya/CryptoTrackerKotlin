@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownRow
+import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
 
@@ -149,18 +149,18 @@ fun AppShell() {
                     PortfolioByCryptosScreen()
                 }
                 composable(AppDestination.WalletBreakdown.route) {
-                    val walletRowsFake = listOf(
-                        WalletBreakdownRow("Metamask", 10400.0, 650.0),
-                        WalletBreakdownRow("ByBit", 2100.0, 190.0),
-                        WalletBreakdownRow("Phantom", 0.0, 0.0),
-                    )
+                    val vm: WalletBreakdownViewModel = viewModel()
+                    val state = vm.state.collectAsState().value
 
                     WalletBreakdownScreen(
-                        rows = walletRowsFake,
+                        state = state,
+                        onToggleShowEmpty = vm::toggleShowEmpty,
+                        onChangeSort = vm::changeSort,
                         onWalletClick = { wallet ->
                             navController.navigate("wallet_detail/$wallet") { launchSingleTop = true }
                         }
-                    )                }
+                    )
+                }
 
                 composable(AppDestination.InMovements.route) {
                     val vm: MovementsViewModel = viewModel(
