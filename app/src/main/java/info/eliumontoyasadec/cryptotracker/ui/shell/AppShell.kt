@@ -1,5 +1,11 @@
 package info.eliumontoyasadec.cryptotracker.ui.shell
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -8,6 +14,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,6 +59,10 @@ fun AppShell() {
     var showFilterDialog by remember { mutableStateOf(false) }
     var showAddMovementDialog by remember { mutableStateOf(false) }
     var showRefreshDialog by remember { mutableStateOf(false) }
+
+    // UI-only (fake) active filters for visual feedback in TopAppBar
+    var activeWalletFilter by remember { mutableStateOf("Todas") }
+    var activeCryptoFilter by remember { mutableStateOf("Todas") }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -113,6 +124,21 @@ fun AppShell() {
                     },
                     actions = {
                         if (isListScreen) {
+                            val hasActiveFilters = activeWalletFilter != "Todas" || activeCryptoFilter != "Todas"
+                            if (hasActiveFilters) {
+                                Text(
+                                    text = "Filtros: $activeWalletFilter · $activeCryptoFilter",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                IconButton(onClick = {
+                                    activeWalletFilter = "Todas"
+                                    activeCryptoFilter = "Todas"
+                                }) {
+                                    Icon(Icons.Filled.Close, contentDescription = "Limpiar filtros")
+                                }
+                            }
+
                             IconButton(onClick = { showSearchDialog = true }) {
                                 Icon(Icons.Filled.Search, contentDescription = "Buscar")
                             }
@@ -267,17 +293,73 @@ fun AppShell() {
     }
 
     if (showFilterDialog) {
-        AlertDialog(
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        var selectedWallet by remember { mutableStateOf(activeWalletFilter) }
+        var selectedCrypto by remember { mutableStateOf(activeCryptoFilter) }
+
+        ModalBottomSheet(
             onDismissRequest = { showFilterDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showFilterDialog = false }) { Text("Aplicar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showFilterDialog = false }) { Text("Cancelar") }
-            },
-            title = { Text("Filtros") },
-            text = { Text("Filtros (fake). Próximo paso: chips por Wallet/Crypto/Tipo/Fechas.") }
-        )
+            sheetState = sheetState
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Filtros", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "(fake) Próximo paso: conectar esto al estado del ViewModel.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Divider()
+
+                Text("Cartera", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Todas", "Metamask", "ByBit", "Phantom").forEach { label ->
+                        FilterChip(
+                            selected = selectedWallet == label,
+                            onClick = { selectedWallet = label },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                Text("Crypto", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Todas", "BTC", "ETH", "SOL", "ALGO", "AIXBT").forEach { label ->
+                        FilterChip(
+                            selected = selectedCrypto == label,
+                            onClick = { selectedCrypto = label },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                Text("Rango de fechas", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    "Desde: (pendiente)   Hasta: (pendiente)",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { showFilterDialog = false }) { Text("Cancelar") }
+                    TextButton(onClick = {
+                        activeWalletFilter = selectedWallet
+                        activeCryptoFilter = selectedCrypto
+                        showFilterDialog = false
+                    }) { Text("Aplicar") }
+                }
+
+                Spacer(Modifier.height(12.dp))
+            }
+        }
     }
 
     if (showAddMovementDialog) {
