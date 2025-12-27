@@ -33,6 +33,7 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.PortfolioByCryptosScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownScreen
 import kotlinx.coroutines.launch
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
+import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
@@ -230,9 +231,14 @@ fun AppShell() {
                 composable(
                     route = AppDestination.CryptoDetail.route,
                     arguments = listOf(navArgument("symbol") { type = NavType.StringType })
-                ) { backStackEntry ->
-                    val symbol = backStackEntry.arguments?.getString("symbol").orEmpty()
-                    CryptoDetailScreen(symbol = symbol)
+                ) { entry ->
+                    val symbol = entry.arguments?.getString("symbol").orEmpty()
+                    val vm: CryptoDetailViewModel = viewModel(
+                        factory = CryptoDetailViewModel.Factory(symbol)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    CryptoDetailScreen(state = state)
                 }
                 composable(
                     route = AppDestination.WalletDetail.route,

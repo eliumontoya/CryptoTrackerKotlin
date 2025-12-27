@@ -2,12 +2,25 @@ package info.eliumontoyasadec.cryptotracker.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -20,7 +33,9 @@ import kotlinx.coroutines.flow.asStateFlow
 
 data class WalletCryptoRow(
     val symbol: String,
-    val quantity: Double
+    val quantity: Double,
+    val valueUsd: Double,
+    val pnlUsd: Double
 )
 
 data class WalletMovementRow(
@@ -38,10 +53,18 @@ data class WalletDetailUiState(
     val movements: List<WalletMovementRow> = emptyList()
 )
 
+private enum class WalletDetailTab(val label: String) {
+    HOLDINGS("Holdings"),
+    MOVEMENTS("Movimientos")
+}
+
 // -------- Composable --------
 
 @Composable
 fun WalletDetailScreen(state: WalletDetailUiState) {
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabs = WalletDetailTab.entries
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,54 +76,172 @@ fun WalletDetailScreen(state: WalletDetailUiState) {
             style = MaterialTheme.typography.headlineSmall
         )
 
-        // Resumen
-        ElevatedCard {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "Valor total (fake): ${formatUsd(state.totalValueUsd)}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "P&L total (fake): ${formatUsd(state.totalPnlUsd)}",
-                    style = MaterialTheme.typography.bodyMedium
+        WalletSummaryCard(
+            totalValueUsd = state.totalValueUsd,
+            totalPnlUsd = state.totalPnlUsd
+        )
+
+        TabRow(selectedTabIndex = selectedTabIndex) {
+            tabs.forEachIndexed { idx, tab ->
+                Tab(
+                    selected = idx == selectedTabIndex,
+                    onClick = { selectedTabIndex = idx },
+                    text = { Text(tab.label) }
                 )
             }
         }
 
-        // Cryptos
-        ElevatedCard {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+        when (tabs[selectedTabIndex]) {
+            WalletDetailTab.HOLDINGS -> WalletHoldingsList(state.cryptos)
+            WalletDetailTab.MOVEMENTS -> WalletMovementsList(state.movements)
+        }
+    }
+}
+
+@Composable
+private fun WalletSummaryCard(totalValueUsd: Double, totalPnlUsd: Double) {
+    ElevatedCard {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Resumen", style = MaterialTheme.typography.titleMedium)
+            Divider()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                Text("Valor total", style = MaterialTheme.typography.bodyMedium)
+                Text(formatUsd(totalValueUsd), style = MaterialTheme.typography.titleMedium)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("P&L", style = MaterialTheme.typography.bodyMedium)
+                Text(formatUsd(totalPnlUsd), style = MaterialTheme.typography.titleMedium)
+            }
+
+            Text(
+                text = "(datos fake)",
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+    }
+}
+
+@Composable
+private fun WalletHoldingsList(rows: List<WalletCryptoRow>) {
+    ElevatedCard {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Holdings", style = MaterialTheme.typography.titleMedium)
+                Text("${rows.size}", style = MaterialTheme.typography.labelLarge)
+            }
+            Divider()
+
+            if (rows.isEmpty()) {
                 Text(
-                    text = "Cryptos en la cartera (fake)",
-                    style = MaterialTheme.typography.titleMedium
+                    text = "No hay cryptos en esta cartera.",
+                    style = MaterialTheme.typography.bodyMedium
                 )
-                state.cryptos.forEach {
-                    Text("${it.symbol} · ${it.quantity}")
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(rows, key = { it.symbol }) { r ->
+                        HoldingRowItem(r)
+                        Divider()
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun HoldingRowItem(row: WalletCryptoRow) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(row.symbol, style = MaterialTheme.typography.titleMedium)
+            Text(formatUsd(row.valueUsd), style = MaterialTheme.typography.titleMedium)
         }
 
-        // Movimientos
-        ElevatedCard {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Cantidad: ${formatQty(row.quantity)}", style = MaterialTheme.typography.bodySmall)
+            Text("P&L: ${formatUsd(row.pnlUsd)}", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun WalletMovementsList(rows: List<WalletMovementRow>) {
+    ElevatedCard {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                Text("Movimientos", style = MaterialTheme.typography.titleMedium)
+                Text("${rows.size}", style = MaterialTheme.typography.labelLarge)
+            }
+            Divider()
+
+            if (rows.isEmpty()) {
                 Text(
-                    text = "Movimientos (fake)",
-                    style = MaterialTheme.typography.titleMedium
+                    text = "No hay movimientos en esta cartera.",
+                    style = MaterialTheme.typography.bodyMedium
                 )
-                state.movements.forEach {
-                    Text("${it.dateLabel} · ${it.description}")
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(rows, key = { it.dateLabel + it.description }) { r ->
+                        MovementRowItem(r)
+                        Divider()
+                    }
                 }
             }
+
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "(datos fake)",
+                style = MaterialTheme.typography.labelSmall
+            )
         }
+    }
+}
+
+@Composable
+private fun MovementRowItem(row: WalletMovementRow) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(row.dateLabel, style = MaterialTheme.typography.labelMedium)
+        Text(row.description, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -114,19 +255,13 @@ class WalletDetailViewModel(private val walletName: String) : ViewModel() {
     companion object {
         fun buildFakeState(walletName: String): WalletDetailUiState {
             val name = walletName.trim()
+            val cryptos = fakeHoldingsFor(name)
             return WalletDetailUiState(
                 walletName = name,
-                totalValueUsd = fakeValue(name),
-                totalPnlUsd = fakePnl(name),
-                cryptos = listOf(
-                    WalletCryptoRow("BTC", 0.10),
-                    WalletCryptoRow("ETH", 1.00),
-                    WalletCryptoRow("SOL", 20.0)
-                ),
-                movements = listOf(
-                    WalletMovementRow("15 Feb 2025", "BUY · +0.10 BTC"),
-                    WalletMovementRow("18 Feb 2025", "SELL · -0.05 BTC")
-                )
+                totalValueUsd = cryptos.sumOf { it.valueUsd },
+                totalPnlUsd = cryptos.sumOf { it.pnlUsd },
+                cryptos = cryptos,
+                movements = fakeMovementsFor(name)
             )
         }
     }
@@ -144,18 +279,46 @@ class WalletDetailViewModel(private val walletName: String) : ViewModel() {
 
 // -------- Fake helpers --------
 
-private fun fakeValue(walletName: String): Double = when (walletName.lowercase()) {
-    "metamask" -> 10400.0
-    "bybit" -> 2100.0
-    "phantom" -> 0.0
-    else -> 0.0
+private fun fakeHoldingsFor(walletName: String): List<WalletCryptoRow> {
+    return when (walletName.lowercase()) {
+        "metamask" -> listOf(
+            WalletCryptoRow(symbol = "BTC", quantity = 0.10, valueUsd = 4_000.0, pnlUsd = 250.0),
+            WalletCryptoRow(symbol = "ETH", quantity = 1.00, valueUsd = 2_400.0, pnlUsd = 120.0),
+            WalletCryptoRow(symbol = "SOL", quantity = 20.0, valueUsd = 4_000.0, pnlUsd = 280.0)
+        )
+        "bybit" -> listOf(
+            WalletCryptoRow(symbol = "AIXBT", quantity = 12.0, valueUsd = 1_500.0, pnlUsd = 150.0),
+            WalletCryptoRow(symbol = "ALGO", quantity = 800.0, valueUsd = 600.0, pnlUsd = 40.0)
+        )
+        "phantom" -> emptyList()
+        else -> emptyList()
+    }
 }
 
-private fun fakePnl(walletName: String): Double = when (walletName.lowercase()) {
-    "metamask" -> 650.0
-    "bybit" -> 190.0
-    "phantom" -> 0.0
-    else -> 0.0
+private fun fakeMovementsFor(walletName: String): List<WalletMovementRow> {
+    return when (walletName.lowercase()) {
+        "metamask" -> listOf(
+            WalletMovementRow("15 Feb 2025", "BUY · +0.10 BTC"),
+            WalletMovementRow("18 Feb 2025", "BUY · +1.00 ETH"),
+            WalletMovementRow("20 Feb 2025", "SWAP · -5 ALGO +1 AIXBT")
+        )
+        "bybit" -> listOf(
+            WalletMovementRow("12 Feb 2025", "DEPOSIT · +12 AIXBT"),
+            WalletMovementRow("13 Feb 2025", "FEE · -0.10 AIXBT")
+        )
+        "phantom" -> emptyList()
+        else -> emptyList()
+    }
 }
 
 private fun formatUsd(value: Double): String = "$" + "%,.2f".format(value)
+
+private fun formatQty(value: Double): String {
+    // clean, readable quantity formatting for demo UI
+    return when {
+        value >= 1000.0 -> "%,.0f".format(value)
+        value >= 10.0 -> "%,.2f".format(value)
+        value >= 1.0 -> "%,.4f".format(value)
+        else -> "%,.6f".format(value)
+    }
+}
