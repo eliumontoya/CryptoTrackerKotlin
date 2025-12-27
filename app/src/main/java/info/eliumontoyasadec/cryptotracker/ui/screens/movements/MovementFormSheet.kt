@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package info.eliumontoyasadec.cryptotracker.ui.screens.movements
 
 import androidx.compose.foundation.layout.Arrangement
@@ -10,17 +11,30 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 enum class MovementFormMode { CREATE, EDIT }
 
@@ -55,6 +69,27 @@ fun MovementFormSheetContent(
     onCancel: () -> Unit,
     onSave: () -> Unit
 ) {
+    val qtyRaw = draft.quantityText.trim()
+    val priceRaw = draft.priceText.trim()
+    val feeRaw = draft.feeQuantityText.trim()
+
+    val qtyValue = qtyRaw.toDoubleOrNull()
+    val priceValue = if (priceRaw.isBlank()) 0.0 else priceRaw.toDoubleOrNull()
+    val feeValue = if (feeRaw.isBlank()) 0.0 else feeRaw.toDoubleOrNull()
+
+    val qtyOk = (qtyValue != null && qtyValue > 0.0)
+    val priceOk = (priceRaw.isBlank() || (priceValue != null && priceValue >= 0.0))
+    val feeOk = (feeRaw.isBlank() || (feeValue != null && feeValue >= 0.0))
+
+    val canSave = qtyOk && priceOk && feeOk
+
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    val formatter = remember {
+        DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault())
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -98,7 +133,13 @@ fun MovementFormSheetContent(
             onValueChange = { onChange(draft.copy(quantityText = it)) },
             label = { Text("Cantidad") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = !qtyOk,
+            supportingText = {
+                if (!qtyOk) {
+                    Text(if (qtyRaw.isBlank()) "Requerido" else "Cantidad inválida")
+                }
+            }
         )
 
         OutlinedTextField(
@@ -106,7 +147,11 @@ fun MovementFormSheetContent(
             onValueChange = { onChange(draft.copy(priceText = it)) },
             label = { Text("Precio (USD) - opcional") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = !priceOk,
+            supportingText = {
+                if (!priceOk) Text("Precio inválido")
+            }
         )
 
         OutlinedTextField(
@@ -114,7 +159,11 @@ fun MovementFormSheetContent(
             onValueChange = { onChange(draft.copy(feeQuantityText = it)) },
             label = { Text("Fee (qty) - opcional") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = !feeOk,
+            supportingText = {
+                if (!feeOk) Text("Fee inválido")
+            }
         )
 
         OutlinedTextField(
@@ -124,7 +173,44 @@ fun MovementFormSheetContent(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Text("Fecha: ${draft.dateLabel} (placeholder)", style = MaterialTheme.typography.bodySmall)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Fecha: ${draft.dateLabel}",
+                style = MaterialTheme.typography.bodySmall
+            )
+            OutlinedButton(onClick = { showDatePicker = true }) {
+                Text("Elegir")
+            }
+        }
+
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val millis = datePickerState.selectedDateMillis
+                            if (millis != null) {
+                                val localDate = Instant.ofEpochMilli(millis)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                val label = formatter.format(localDate)
+                                onChange(draft.copy(dateLabel = label))
+                            }
+                            showDatePicker = false
+                        }
+                    ) { Text("Aceptar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
 
         Spacer(Modifier.height(4.dp))
 
@@ -133,7 +219,7 @@ fun MovementFormSheetContent(
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = onCancel) { Text("Cancelar") }
-            Button(onClick = onSave) { Text("Guardar") }
+            Button(onClick = onSave, enabled = canSave) { Text("Guardar") }
         }
 
         Spacer(Modifier.height(12.dp))

@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package info.eliumontoyasadec.cryptotracker.ui.screens.movements
 
 import androidx.compose.foundation.layout.Arrangement
@@ -10,17 +11,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 data class SwapDraft(
     val id: String? = null,
@@ -41,6 +54,27 @@ fun SwapFormSheetContent(
     onCancel: () -> Unit,
     onSave: () -> Unit
 ) {
+    val fromQtyRaw = draft.fromQtyText.trim()
+    val toQtyRaw = draft.toQtyText.trim()
+    val feeRaw = draft.feeQtyText.trim()
+
+    val fromQtyValue = fromQtyRaw.toDoubleOrNull()
+    val toQtyValue = toQtyRaw.toDoubleOrNull()
+    val feeValue = if (feeRaw.isBlank()) 0.0 else feeRaw.toDoubleOrNull()
+
+    val fromOk = (fromQtyValue != null && fromQtyValue > 0.0)
+    val toOk = (toQtyValue != null && toQtyValue > 0.0)
+    val feeOk = (feeRaw.isBlank() || (feeValue != null && feeValue >= 0.0))
+    val pairOk = (draft.fromCrypto != draft.toCrypto)
+
+    val canSave = fromOk && toOk && feeOk && pairOk
+
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+    val formatter = remember {
+        DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault())
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -72,7 +106,13 @@ fun SwapFormSheetContent(
             onValueChange = { onChange(draft.copy(fromQtyText = it)) },
             label = { Text("Cantidad From") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = !fromOk,
+            supportingText = {
+                if (!fromOk) {
+                    Text(if (fromQtyRaw.isBlank()) "Requerido" else "Cantidad inválida")
+                }
+            }
         )
 
         Text("To", style = MaterialTheme.typography.labelLarge)
@@ -87,7 +127,14 @@ fun SwapFormSheetContent(
             onValueChange = { onChange(draft.copy(toQtyText = it)) },
             label = { Text("Cantidad To") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = !toOk || !pairOk,
+            supportingText = {
+                when {
+                    !pairOk -> Text("From y To deben ser diferentes")
+                    !toOk -> Text(if (toQtyRaw.isBlank()) "Requerido" else "Cantidad inválida")
+                }
+            }
         )
 
         OutlinedTextField(
@@ -95,7 +142,11 @@ fun SwapFormSheetContent(
             onValueChange = { onChange(draft.copy(feeQtyText = it)) },
             label = { Text("Fee (qty) - opcional") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            isError = !feeOk,
+            supportingText = {
+                if (!feeOk) Text("Fee inválido")
+            }
         )
 
         OutlinedTextField(
@@ -105,7 +156,39 @@ fun SwapFormSheetContent(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Text("Fecha: ${draft.dateLabel} (placeholder)", style = MaterialTheme.typography.bodySmall)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Fecha: ${draft.dateLabel}", style = MaterialTheme.typography.bodySmall)
+            OutlinedButton(onClick = { showDatePicker = true }) { Text("Elegir") }
+        }
+
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val millis = datePickerState.selectedDateMillis
+                            if (millis != null) {
+                                val localDate = Instant.ofEpochMilli(millis)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                val label = formatter.format(localDate)
+                                onChange(draft.copy(dateLabel = label))
+                            }
+                            showDatePicker = false
+                        }
+                    ) { Text("Aceptar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
 
         Spacer(Modifier.height(4.dp))
 
@@ -114,7 +197,7 @@ fun SwapFormSheetContent(
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = onCancel) { Text("Cancelar") }
-            Button(onClick = onSave) { Text("Guardar swap") }
+            Button(onClick = onSave, enabled = canSave) { Text("Guardar swap") }
         }
 
         Spacer(Modifier.height(12.dp))

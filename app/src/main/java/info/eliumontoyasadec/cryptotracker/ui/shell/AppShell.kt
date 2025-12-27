@@ -1,6 +1,7 @@
 package info.eliumontoyasadec.cryptotracker.ui.shell
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,8 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapDraft
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapFormSheetContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +80,10 @@ fun AppShell() {
     var showAddMovementDialog by remember { mutableStateOf(false) }
     var addMovementDraft by remember { mutableStateOf(MovementDraft()) }
     var showRefreshDialog by remember { mutableStateOf(false) }
+
+    var showAddMenu by remember { mutableStateOf(false) }
+    var showAddSwapSheet by remember { mutableStateOf(false) }
+    var addSwapDraft by remember { mutableStateOf(SwapDraft()) }
 
     // UI-only (fake) active filters for visual feedback in TopAppBar
     var filters by remember { mutableStateOf(FilterUiState()) }
@@ -159,25 +166,57 @@ fun AppShell() {
                                 Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
                             }
                         } else {
-                            IconButton(
-                                onClick = {
-                                    // UI-only: open Movement form prefilled with current context
-                                    val prefilled = when {
-                                        isCryptoDetail -> {
-                                            val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) } ?: CryptoFilter.BTC
-                                            MovementDraft(crypto = crypto)
-                                        }
-                                        isWalletDetail -> {
-                                            val wallet = walletName?.let { nameToWalletFilter(it) } ?: WalletFilter.METAMASK
-                                            MovementDraft(wallet = wallet)
-                                        }
-                                        else -> MovementDraft()
-                                    }
-                                    addMovementDraft = prefilled
-                                    showAddMovementDialog = true
+                            Box {
+                                IconButton(
+                                    onClick = { showAddMenu = true }
+                                ) {
+                                    Icon(Icons.Filled.Add, contentDescription = "Agregar")
                                 }
-                            ) {
-                                Icon(Icons.Filled.Add, contentDescription = "Agregar movimiento")
+
+                                DropdownMenu(
+                                    expanded = showAddMenu,
+                                    onDismissRequest = { showAddMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Movimiento") },
+                                        onClick = {
+                                            val prefilled = when {
+                                                isCryptoDetail -> {
+                                                    val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) } ?: CryptoFilter.BTC
+                                                    MovementDraft(crypto = crypto)
+                                                }
+                                                isWalletDetail -> {
+                                                    val wallet = walletName?.let { nameToWalletFilter(it) } ?: WalletFilter.METAMASK
+                                                    MovementDraft(wallet = wallet)
+                                                }
+                                                else -> MovementDraft()
+                                            }
+                                            addMovementDraft = prefilled
+                                            showAddMovementDialog = true
+                                            showAddMenu = false
+                                        }
+                                    )
+
+                                    DropdownMenuItem(
+                                        text = { Text("Swap") },
+                                        onClick = {
+                                            val prefilledSwap = when {
+                                                isCryptoDetail -> {
+                                                    val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) } ?: CryptoFilter.BTC
+                                                    SwapDraft(fromCrypto = crypto)
+                                                }
+                                                isWalletDetail -> {
+                                                    val wallet = walletName?.let { nameToWalletFilter(it) } ?: WalletFilter.METAMASK
+                                                    SwapDraft(wallet = wallet)
+                                                }
+                                                else -> SwapDraft()
+                                            }
+                                            addSwapDraft = prefilledSwap
+                                            showAddSwapSheet = true
+                                            showAddMenu = false
+                                        }
+                                    )
+                                }
                             }
                             IconButton(onClick = { showRefreshDialog = true }) {
                                 Icon(Icons.Filled.Refresh, contentDescription = "Refrescar")
@@ -449,6 +488,24 @@ fun AppShell() {
                 onSave = {
                     // UI-only: close the sheet. (Later: call use case / repo)
                     showAddMovementDialog = false
+                }
+            )
+        }
+    }
+
+    if (showAddSwapSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showAddSwapSheet = false },
+            sheetState = sheetState
+        ) {
+            SwapFormSheetContent(
+                draft = addSwapDraft,
+                onChange = { addSwapDraft = it },
+                onCancel = { showAddSwapSheet = false },
+                onSave = {
+                    // UI-only: close the sheet. (Later: call use case / repo)
+                    showAddSwapSheet = false
                 }
             )
         }
