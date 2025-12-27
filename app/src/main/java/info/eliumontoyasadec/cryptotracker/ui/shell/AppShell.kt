@@ -101,6 +101,7 @@ fun AppShell() {
     val isDetailScreen = isCryptoDetail || isWalletDetail
     val isListScreen = !isDetailScreen
 
+    val snackbarHostState = remember { SnackbarHostState() }
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -224,7 +225,8 @@ fun AppShell() {
                         }
                     }
                 )
-            }
+            },
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
         ) { padding ->
             NavHost(
                 navController = navController,
@@ -259,7 +261,10 @@ fun AppShell() {
                         onAddMovement = vm::startAddMovement,
                         onDismissForm = vm::dismissForm,
                         onMovementDraftChange = vm::changeMovementDraft,
-                        onMovementSave = vm::saveMovement
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                        }
                     )
                 }
 
@@ -279,12 +284,21 @@ fun AppShell() {
                         onEdit = vm::startEdit,
                         onRequestDelete = vm::requestDelete,
                         onCancelDelete = vm::cancelDelete,
-                        onConfirmDelete = vm::confirmDelete,
+                        onConfirmDelete = {
+                            vm.confirmDelete(it)
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento eliminado") }
+                        },
                         onDismissForms = vm::dismissForms,
                         onMovementDraftChange = vm::changeMovementDraft,
-                        onMovementSave = vm::saveMovement,
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                        },
                         onSwapDraftChange = vm::changeSwapDraft,
-                        onSwapSave = vm::saveSwap
+                        onSwapSave = {
+                            vm.saveSwap()
+                            scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
+                        }
                     )
                 }
                 composable(AppDestination.OutMovements.route) {
@@ -303,12 +317,21 @@ fun AppShell() {
                         onEdit = vm::startEdit,
                         onRequestDelete = vm::requestDelete,
                         onCancelDelete = vm::cancelDelete,
-                        onConfirmDelete = vm::confirmDelete,
+                        onConfirmDelete = {
+                            vm.confirmDelete(it)
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento eliminado") }
+                        },
                         onDismissForms = vm::dismissForms,
                         onMovementDraftChange = vm::changeMovementDraft,
-                        onMovementSave = vm::saveMovement,
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                        },
                         onSwapDraftChange = vm::changeSwapDraft,
-                        onSwapSave = vm::saveSwap
+                        onSwapSave = {
+                            vm.saveSwap()
+                            scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
+                        }
                     )
                 }
                 composable(AppDestination.BetweenWallets.route) {
@@ -327,12 +350,21 @@ fun AppShell() {
                         onEdit = vm::startEdit,
                         onRequestDelete = vm::requestDelete,
                         onCancelDelete = vm::cancelDelete,
-                        onConfirmDelete = vm::confirmDelete,
+                        onConfirmDelete = {
+                            vm.confirmDelete(it)
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento eliminado") }
+                        },
                         onDismissForms = vm::dismissForms,
                         onMovementDraftChange = vm::changeMovementDraft,
-                        onMovementSave = vm::saveMovement,
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                        },
                         onSwapDraftChange = vm::changeSwapDraft,
-                        onSwapSave = vm::saveSwap
+                        onSwapSave = {
+                            vm.saveSwap()
+                            scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
+                        }
                     )
                 }
                 composable(AppDestination.Swaps.route) {
@@ -351,12 +383,21 @@ fun AppShell() {
                         onEdit = vm::startEdit,
                         onRequestDelete = vm::requestDelete,
                         onCancelDelete = vm::cancelDelete,
-                        onConfirmDelete = vm::confirmDelete,
+                        onConfirmDelete = {
+                            vm.confirmDelete(it)
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento eliminado") }
+                        },
                         onDismissForms = vm::dismissForms,
                         onMovementDraftChange = vm::changeMovementDraft,
-                        onMovementSave = vm::saveMovement,
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                        },
                         onSwapDraftChange = vm::changeSwapDraft,
-                        onSwapSave = vm::saveSwap
+                        onSwapSave = {
+                            vm.saveSwap()
+                            scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
+                        }
                     )
                 }
 
@@ -488,6 +529,7 @@ fun AppShell() {
                 onSave = {
                     // UI-only: close the sheet. (Later: call use case / repo)
                     showAddMovementDialog = false
+                    scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
                 }
             )
         }
@@ -506,6 +548,7 @@ fun AppShell() {
                 onSave = {
                     // UI-only: close the sheet. (Later: call use case / repo)
                     showAddSwapSheet = false
+                    scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
                 }
             )
         }

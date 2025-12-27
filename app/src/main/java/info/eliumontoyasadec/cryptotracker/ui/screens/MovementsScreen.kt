@@ -26,10 +26,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.input.ImeAction
+ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
@@ -124,6 +127,23 @@ fun MovementsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        var searchQuery by remember { mutableStateOf("") }
+        val q = searchQuery.trim().lowercase()
+        val shownRows = if (q.isBlank()) {
+            state.filteredRows
+        } else {
+            state.filteredRows.filter { row ->
+                row.headline.lowercase().contains(q) ||
+                    row.details.lowercase().contains(q) ||
+                    row.crypto.label.lowercase().contains(q) ||
+                    row.wallet.label.lowercase().contains(q)
+            }
+        }
+        val hasActiveFilters =
+            (state.selectedWallet != WalletFilter.ALL) ||
+            (state.selectedCrypto != CryptoFilter.ALL) ||
+            (searchQuery.isNotBlank())
+
         Text(title, style = MaterialTheme.typography.headlineSmall)
 
         // Filters
@@ -167,13 +187,51 @@ fun MovementsScreen(
                 ) {
                     Text("Movimientos", style = MaterialTheme.typography.titleMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("${state.filteredRows.size}", style = MaterialTheme.typography.labelLarge)
+                        Text("${shownRows.size}", style = MaterialTheme.typography.labelLarge)
                         OutlinedButton(onClick = onCreate) { Text("Nuevo") }
                     }
                 }
                 Divider()
 
-                if (state.filteredRows.isEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val parts = buildList {
+                        if (state.selectedWallet != WalletFilter.ALL) add(state.selectedWallet.label)
+                        if (state.selectedCrypto != CryptoFilter.ALL) add(state.selectedCrypto.label)
+                        if (searchQuery.isNotBlank()) add("Buscar: ${searchQuery}")
+                    }
+
+                    Text(
+                        text = if (parts.isEmpty()) "Filtros activos: Ninguno" else "Filtros activos: ${parts.joinToString(" · ")}",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    if (hasActiveFilters) {
+                        TextButton(
+                            onClick = {
+                                searchQuery = ""
+                                onSelectWallet(WalletFilter.ALL)
+                                onSelectCrypto(CryptoFilter.ALL)
+                            }
+                        ) {
+                            Text("Limpiar")
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Buscar") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                )
+
+                if (shownRows.isEmpty()) {
                     Text(
                         text = "No hay movimientos con los filtros actuales.",
                         style = MaterialTheme.typography.bodyMedium
@@ -183,7 +241,7 @@ fun MovementsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(state.filteredRows, key = { it.id }) { row ->
+                        items(shownRows, key = { it.id }) { row ->
                             MovementRowItem(
                                 row = row,
                                 onClick = { onEdit(row) },
