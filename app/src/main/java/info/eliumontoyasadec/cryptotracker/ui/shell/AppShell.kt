@@ -48,6 +48,12 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailViewModel
 
+import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
+import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+
 // UI-only filter state (visual feedback only; not wired to ViewModels yet)
 data class FilterUiState(
     val wallet: String = "Todas",
@@ -69,6 +75,7 @@ fun AppShell() {
     var showSearchDialog by remember { mutableStateOf(false) }
     var showFilterDialog by remember { mutableStateOf(false) }
     var showAddMovementDialog by remember { mutableStateOf(false) }
+    var addMovementDraft by remember { mutableStateOf(MovementDraft()) }
     var showRefreshDialog by remember { mutableStateOf(false) }
 
     // UI-only (fake) active filters for visual feedback in TopAppBar
@@ -152,7 +159,24 @@ fun AppShell() {
                                 Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
                             }
                         } else {
-                            IconButton(onClick = { showAddMovementDialog = true }) {
+                            IconButton(
+                                onClick = {
+                                    // UI-only: open Movement form prefilled with current context
+                                    val prefilled = when {
+                                        isCryptoDetail -> {
+                                            val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) } ?: CryptoFilter.BTC
+                                            MovementDraft(crypto = crypto)
+                                        }
+                                        isWalletDetail -> {
+                                            val wallet = walletName?.let { nameToWalletFilter(it) } ?: WalletFilter.METAMASK
+                                            MovementDraft(wallet = wallet)
+                                        }
+                                        else -> MovementDraft()
+                                    }
+                                    addMovementDraft = prefilled
+                                    showAddMovementDialog = true
+                                }
+                            ) {
                                 Icon(Icons.Filled.Add, contentDescription = "Agregar movimiento")
                             }
                             IconButton(onClick = { showRefreshDialog = true }) {
@@ -192,7 +216,11 @@ fun AppShell() {
                         onChangeSort = vm::changeSort,
                         onWalletClick = { wallet ->
                             navController.navigate("wallet_detail/$wallet") { launchSingleTop = true }
-                        }
+                        },
+                        onAddMovement = vm::startAddMovement,
+                        onDismissForm = vm::dismissForm,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = vm::saveMovement
                     )
                 }
 
@@ -207,7 +235,17 @@ fun AppShell() {
                         title = "Movimientos de Entrada",
                         state = state,
                         onSelectWallet = vm::selectWallet,
-                        onSelectCrypto = vm::selectCrypto
+                        onSelectCrypto = vm::selectCrypto,
+                        onCreate = vm::startCreate,
+                        onEdit = vm::startEdit,
+                        onRequestDelete = vm::requestDelete,
+                        onCancelDelete = vm::cancelDelete,
+                        onConfirmDelete = vm::confirmDelete,
+                        onDismissForms = vm::dismissForms,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = vm::saveMovement,
+                        onSwapDraftChange = vm::changeSwapDraft,
+                        onSwapSave = vm::saveSwap
                     )
                 }
                 composable(AppDestination.OutMovements.route) {
@@ -221,7 +259,17 @@ fun AppShell() {
                         title = "Movimientos de Salida",
                         state = state,
                         onSelectWallet = vm::selectWallet,
-                        onSelectCrypto = vm::selectCrypto
+                        onSelectCrypto = vm::selectCrypto,
+                        onCreate = vm::startCreate,
+                        onEdit = vm::startEdit,
+                        onRequestDelete = vm::requestDelete,
+                        onCancelDelete = vm::cancelDelete,
+                        onConfirmDelete = vm::confirmDelete,
+                        onDismissForms = vm::dismissForms,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = vm::saveMovement,
+                        onSwapDraftChange = vm::changeSwapDraft,
+                        onSwapSave = vm::saveSwap
                     )
                 }
                 composable(AppDestination.BetweenWallets.route) {
@@ -235,7 +283,17 @@ fun AppShell() {
                         title = "Movimientos Entre Carteras",
                         state = state,
                         onSelectWallet = vm::selectWallet,
-                        onSelectCrypto = vm::selectCrypto
+                        onSelectCrypto = vm::selectCrypto,
+                        onCreate = vm::startCreate,
+                        onEdit = vm::startEdit,
+                        onRequestDelete = vm::requestDelete,
+                        onCancelDelete = vm::cancelDelete,
+                        onConfirmDelete = vm::confirmDelete,
+                        onDismissForms = vm::dismissForms,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = vm::saveMovement,
+                        onSwapDraftChange = vm::changeSwapDraft,
+                        onSwapSave = vm::saveSwap
                     )
                 }
                 composable(AppDestination.Swaps.route) {
@@ -249,7 +307,17 @@ fun AppShell() {
                         title = "Movimientos de Swaps",
                         state = state,
                         onSelectWallet = vm::selectWallet,
-                        onSelectCrypto = vm::selectCrypto
+                        onSelectCrypto = vm::selectCrypto,
+                        onCreate = vm::startCreate,
+                        onEdit = vm::startEdit,
+                        onRequestDelete = vm::requestDelete,
+                        onCancelDelete = vm::cancelDelete,
+                        onConfirmDelete = vm::confirmDelete,
+                        onDismissForms = vm::dismissForms,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = vm::saveMovement,
+                        onSwapDraftChange = vm::changeSwapDraft,
+                        onSwapSave = vm::saveSwap
                     )
                 }
 
@@ -368,17 +436,22 @@ fun AppShell() {
     }
 
     if (showAddMovementDialog) {
-        AlertDialog(
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
             onDismissRequest = { showAddMovementDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showAddMovementDialog = false }) { Text("Guardar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddMovementDialog = false }) { Text("Cancelar") }
-            },
-            title = { Text("Agregar movimiento") },
-            text = { Text("Formulario (fake). Próximo paso: ModalBottomSheet con tipo/cantidad/precio/wallet.") }
-        )
+            sheetState = sheetState
+        ) {
+            MovementFormSheetContent(
+                mode = MovementFormMode.CREATE,
+                draft = addMovementDraft,
+                onChange = { addMovementDraft = it },
+                onCancel = { showAddMovementDialog = false },
+                onSave = {
+                    // UI-only: close the sheet. (Later: call use case / repo)
+                    showAddMovementDialog = false
+                }
+            )
+        }
     }
 
     if (showRefreshDialog) {
@@ -456,4 +529,22 @@ private fun routeToTitle(route: String?): String = when (route) {
     AppDestination.Swaps.route -> "Swaps"
     AppDestination.Admin.route -> "Administración"
     else -> "CryptoTracker"
+}
+
+private fun symbolToCryptoFilter(symbol: String): CryptoFilter {
+    return try {
+        CryptoFilter.valueOf(symbol.trim().uppercase())
+    } catch (_: Throwable) {
+        CryptoFilter.BTC
+    }
+}
+
+private fun nameToWalletFilter(name: String): WalletFilter {
+    val n = name.trim().lowercase()
+    return when {
+        n.contains("meta") -> WalletFilter.METAMASK
+        n.contains("bybit") -> WalletFilter.BYBIT
+        n.contains("phantom") -> WalletFilter.PHANTOM
+        else -> WalletFilter.METAMASK
+    }
 }

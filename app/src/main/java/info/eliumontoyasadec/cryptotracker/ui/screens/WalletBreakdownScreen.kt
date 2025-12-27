@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package info.eliumontoyasadec.cryptotracker.ui.screens
 
 import androidx.compose.foundation.clickable
@@ -24,6 +25,15 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
 
 // -------- UI models --------
 
@@ -44,7 +54,12 @@ data class WalletBreakdownUiState(
     val showEmpty: Boolean = false,
     val sortBy: WalletSortBy = WalletSortBy.VALUE,
     val rows: List<WalletBreakdownRow> = emptyList(),
-    val visibleRows: List<WalletBreakdownRow> = emptyList()
+    val visibleRows: List<WalletBreakdownRow> = emptyList(),
+    val movementForm: WalletBreakdownMovementFormState? = null)
+
+data class WalletBreakdownMovementFormState(
+    val mode: MovementFormMode,
+    val draft: MovementDraft
 )
 
 // -------- Composable --------
@@ -54,7 +69,11 @@ fun WalletBreakdownScreen(
     state: WalletBreakdownUiState,
     onToggleShowEmpty: () -> Unit,
     onChangeSort: (WalletSortBy) -> Unit,
-    onWalletClick: (walletName: String) -> Unit
+    onWalletClick: (walletName: String) -> Unit,
+    onAddMovement: () -> Unit,
+    onDismissForm: () -> Unit,
+    onMovementDraftChange: (MovementDraft) -> Unit,
+    onMovementSave: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -62,7 +81,15 @@ fun WalletBreakdownScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Desglose por Carteras", style = MaterialTheme.typography.headlineSmall)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Desglose por Carteras", style = MaterialTheme.typography.headlineSmall)
+            IconButton(onClick = onAddMovement) {
+                Icon(Icons.Filled.Add, contentDescription = "Agregar movimiento")
+            }
+        }
 
         // Filters
         ElevatedCard {
@@ -132,6 +159,23 @@ fun WalletBreakdownScreen(
                 }
             }
         }
+
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+        if (state.movementForm != null) {
+            ModalBottomSheet(
+                onDismissRequest = onDismissForm,
+                sheetState = sheetState
+            ) {
+                MovementFormSheetContent(
+                    mode = state.movementForm.mode,
+                    draft = state.movementForm.draft,
+                    onChange = onMovementDraftChange,
+                    onCancel = onDismissForm,
+                    onSave = onMovementSave
+                )
+            }
+        }
     }
 }
 
@@ -182,6 +226,31 @@ class WalletBreakdownViewModel : ViewModel() {
     fun changeSort(sort: WalletSortBy) {
         val next = _state.value.copy(sortBy = sort)
         _state.value = next.copy(visibleRows = apply(next))
+    }
+
+    fun startAddMovement() {
+        val st = _state.value
+        _state.value = st.copy(
+            movementForm = WalletBreakdownMovementFormState(
+                mode = MovementFormMode.CREATE,
+                draft = MovementDraft(wallet = WalletFilter.METAMASK)
+            )
+        )
+    }
+
+    fun dismissForm() {
+        _state.value = _state.value.copy(movementForm = null)
+    }
+
+    fun changeMovementDraft(draft: MovementDraft) {
+        val st = _state.value
+        val form = st.movementForm ?: return
+        _state.value = st.copy(movementForm = form.copy(draft = draft))
+    }
+
+    fun saveMovement() {
+        // UI-only: close the sheet. (Later: call use case / repo)
+        dismissForm()
     }
 
     private fun apply(state: WalletBreakdownUiState): List<WalletBreakdownRow> {
