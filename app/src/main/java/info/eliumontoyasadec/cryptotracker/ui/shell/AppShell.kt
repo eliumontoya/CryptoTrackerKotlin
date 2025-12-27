@@ -38,6 +38,7 @@ import androidx.navigation.navArgument
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
+import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -238,8 +239,12 @@ fun AppShell() {
                     arguments = listOf(navArgument("wallet") { type = NavType.StringType })
                 ) { entry ->
                     val wallet = entry.arguments?.getString("wallet").orEmpty()
-                    WalletDetailScreen(walletName = wallet)
-                }
+                    val vm: WalletDetailViewModel = viewModel(
+                        factory = WalletDetailViewModel.Factory(wallet)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    WalletDetailScreen(state = state)                }
             }
         }
     }
