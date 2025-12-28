@@ -3,7 +3,7 @@ package info.eliumontoyasadec.cryptotracker.domain.repositories
 import androidx.room.withTransaction
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.room.entities.HoldingEntity
-import info.eliumontoyasadec.cryptotracker.room.entities.TransactionEntity
+import info.eliumontoyasadec.cryptotracker.room.entities.MovementEntity
 import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 
 class LedgerRepository(
@@ -12,9 +12,9 @@ class LedgerRepository(
     private val txDao = db.transactionDao()
     private val holdingDao = db.holdingDao()
 
-    suspend fun addTransaction(tx: TransactionEntity) {
+    suspend fun addTransaction(tx: MovementEntity) {
         val now = System.currentTimeMillis()
-
+/*
         db.withTransaction {
             txDao.insert(tx)
 
@@ -38,9 +38,11 @@ class LedgerRepository(
                 )
             }
         }
+        */
+
     }
 
-    private fun TransactionEntity.toHoldingDelta(): Double {
+    private fun MovementEntity.toHoldingDelta(): Double {
         return when (type) {
             MovementType.BUY,
             MovementType.DEPOSIT,

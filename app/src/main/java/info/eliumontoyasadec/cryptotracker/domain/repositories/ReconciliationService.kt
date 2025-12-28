@@ -12,7 +12,7 @@ class ReconciliationService(
 
     suspend fun rebuildAllHoldings() {
         val now = System.currentTimeMillis()
-
+/*
         db.withTransaction {
             holdingDao.deleteAll()
             val rows = txDao.computeBalancesAll()
@@ -27,11 +27,13 @@ class ReconciliationService(
                 )
             }
         }
+
+ */
     }
 
     suspend fun rebuildHoldingsForWallet(walletId: Long) {
         val now = System.currentTimeMillis()
-
+/*
         db.withTransaction {
             holdingDao.deleteByWallet(walletId)
             val rows = txDao.computeBalancesByWallet(walletId)
@@ -47,4 +49,6 @@ class ReconciliationService(
             }
         }
     }
-}
+
+ */
+    }}

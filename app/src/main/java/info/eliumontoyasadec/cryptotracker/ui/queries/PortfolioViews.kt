@@ -11,7 +11,7 @@ data class PortfolioWalletTotalRow(
 data class WalletHoldingRow(
     val walletId: Long,
     val walletName: String,
-    val cryptoSymbol: String,
+    val assetId: String,
     val cryptoName: String?,
     val quantity: Double,
     val updatedAt: Long

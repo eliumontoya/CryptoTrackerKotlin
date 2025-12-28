@@ -1,39 +1,42 @@
 package info.eliumontoyasadec.cryptotracker.room.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import info.eliumontoyasadec.cryptotracker.room.entities.HoldingEntity
 
 @Dao
 interface HoldingDao {
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM holdings
-        WHERE walletId = :walletId
-        ORDER BY cryptoSymbol ASC
-    """)
-    suspend fun getByWallet(walletId: Long): List<HoldingEntity>
-
-    @Query("""
-        SELECT * FROM holdings
-        WHERE walletId = :walletId AND cryptoSymbol = :symbol
+        WHERE portfolioId = :portfolioId
+          AND walletId = :walletId
+          AND assetId = :assetId
         LIMIT 1
-    """)
-    suspend fun find(walletId: Long, symbol: String): HoldingEntity?
+        """
+    )
+    suspend fun findByPortfolioWalletAsset(
+        portfolioId: String,
+        walletId: String,
+        assetId: String
+    ): HoldingEntity?
 
-    @Insert
-    suspend fun insert(holding: HoldingEntity): Long
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: HoldingEntity)
 
-    @Query("""
-        UPDATE holdings
-        SET quantity = quantity + :delta,
-            updatedAt = :updatedAt
-        WHERE holdingId = :holdingId
-    """)
-    suspend fun applyDelta(holdingId: Long, delta: Double, updatedAt: Long)
-
-    @Query("DELETE FROM holdings WHERE walletId = :walletId")
-    suspend fun deleteByWallet(walletId: Long)
-
-    @Query("DELETE FROM holdings")
-    suspend fun deleteAll()
+    @Query(
+        """
+        SELECT * FROM holdings
+        WHERE portfolioId = :portfolioId
+          AND walletId = :walletId
+        ORDER BY assetId ASC
+        """
+    )
+    suspend fun listByWallet(
+        portfolioId: String,
+        walletId: String
+    ): List<HoldingEntity>
 }

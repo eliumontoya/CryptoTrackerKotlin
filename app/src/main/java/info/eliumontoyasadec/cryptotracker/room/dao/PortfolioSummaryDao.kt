@@ -20,7 +20,7 @@ interface PortfolioSummaryDao {
             p.portfolioId AS portfolioId,
             p.name AS portfolioName,
             COUNT(DISTINCT w.walletId) AS totalWallets,
-            COUNT(DISTINCT h.cryptoSymbol) AS totalDistinctCryptos,
+            COUNT(DISTINCT h.assetId) AS totalDistinctCryptos,
             MAX(h.updatedAt) AS lastUpdatedAt
         FROM portfolios p
         LEFT JOIN wallets w ON w.portfolioId = p.portfolioId
@@ -40,7 +40,7 @@ interface PortfolioSummaryDao {
             w.portfolioId AS portfolioId,
             w.walletId AS walletId,
             w.name AS walletName,
-            COUNT(DISTINCT h.cryptoSymbol) AS totalDistinctCryptos,
+            COUNT(DISTINCT h.assetId) AS totalDistinctCryptos,
             MAX(h.updatedAt) AS lastUpdatedAt
         FROM wallets w
         LEFT JOIN holdings h ON h.walletId = w.walletId
@@ -58,15 +58,15 @@ interface PortfolioSummaryDao {
         SELECT
             w.walletId AS walletId,
             w.name AS walletName,
-            h.cryptoSymbol AS cryptoSymbol,
+            h.assetId AS assetId,
             c.name AS cryptoName,
             h.quantity AS quantity,
             h.updatedAt AS updatedAt
         FROM wallets w
         INNER JOIN holdings h ON h.walletId = w.walletId
-        LEFT JOIN cryptos c ON c.symbol = h.cryptoSymbol
+        LEFT JOIN cryptos c ON c.symbol = h.assetId
         WHERE w.walletId = :walletId
-        ORDER BY h.cryptoSymbol ASC
+        ORDER BY h.assetId ASC
     """)
     suspend fun getHoldingsByWallet(walletId: Long): List<WalletHoldingRow>
 
@@ -78,15 +78,15 @@ interface PortfolioSummaryDao {
         SELECT
             w.walletId AS walletId,
             w.name AS walletName,
-            h.cryptoSymbol AS cryptoSymbol,
+            h.assetId AS assetId,
             c.name AS cryptoName,
             h.quantity AS quantity,
             h.updatedAt AS updatedAt
         FROM wallets w
         INNER JOIN holdings h ON h.walletId = w.walletId
-        LEFT JOIN cryptos c ON c.symbol = h.cryptoSymbol
+        LEFT JOIN cryptos c ON c.symbol = h.assetId
         WHERE w.portfolioId = :portfolioId
-        ORDER BY w.isMain DESC, w.name ASC, h.cryptoSymbol ASC
+        ORDER BY w.isMain DESC, w.name ASC, h.assetId ASC
     """)
     suspend fun getHoldingsByPortfolio(portfolioId: Long): List<WalletHoldingRow>
 }
