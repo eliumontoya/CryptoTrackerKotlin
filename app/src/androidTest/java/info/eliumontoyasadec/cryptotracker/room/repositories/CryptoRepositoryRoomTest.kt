@@ -3,9 +3,9 @@ package info.eliumontoyasadec.cryptotracker.room.repositories
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
-import info.eliumontoyasadec.cryptotracker.room.entities.CryptoEntity
+import info.eliumontoyasadec.cryptotracker.domain.model.Crypto
 import info.eliumontoyasadec.cryptotracker.room.RoomTestSeed
+import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
@@ -35,27 +35,34 @@ class CryptoRepositoryRoomTest {
     fun tearDown() = db.close()
 
     @Test
-    fun upsertAll_getAll_ordering_getBySymbol_replace() = runTest {
+    fun upsertAll_getAll_ordering_findBySymbol_replace() = runTest {
         repo.upsertAll(
             listOf(
-                CryptoEntity(symbol = "btc", name = "Bitcoin", coingeckoId = "bitcoin", isActive = true),
-                CryptoEntity(symbol = "eth", name = "Ethereum", coingeckoId = "ethereum", isActive = true)
+                Crypto(symbol = "btc", name = "Bitcoin", coingeckoId = "bitcoin", isActive = true),
+                Crypto(symbol = "eth", name = "Ethereum", coingeckoId = "ethereum", isActive = true)
             )
         )
 
         val all = repo.getAll()
         assertEquals(2, all.size)
-        // ORDER BY name ASC
+        // ORDER BY name ASC (lo impone el DAO)
         assertEquals("Bitcoin", all[0].name)
         assertEquals("Ethereum", all[1].name)
 
-        val btc = repo.getBySymbol("btc")
+        val btc = repo.findBySymbol("btc")
         assertNotNull(btc)
         assertEquals("Bitcoin", btc!!.name)
 
         // replace
-        repo.upsertAll(listOf(CryptoEntity(symbol = "btc", name = "Bitcoin v2", coingeckoId = "bitcoin", isActive = true)))
-        val btc2 = repo.getBySymbol("btc")
+        repo.upsertAll(listOf(Crypto(symbol = "btc", name = "Bitcoin v2", coingeckoId = "bitcoin", isActive = true)))
+        val btc2 = repo.findBySymbol("btc")
         assertEquals("Bitcoin v2", btc2!!.name)
+    }
+
+    @Test
+    fun exists_returnsTrue_whenSymbolPresent() = runTest {
+        repo.upsertAll(listOf(Crypto(symbol = "btc", name = "Bitcoin", coingeckoId = "bitcoin", isActive = true)))
+        assertTrue(repo.exists("btc"))
+        assertFalse(repo.exists("xrp"))
     }
 }

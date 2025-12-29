@@ -1,5 +1,6 @@
 package info.eliumontoyasadec.cryptotracker.room.repositories
 
+import info.eliumontoyasadec.cryptotracker.domain.model.Crypto
 import info.eliumontoyasadec.cryptotracker.domain.repositories.CryptoRepository
 import info.eliumontoyasadec.cryptotracker.room.dao.CryptoDao
 import info.eliumontoyasadec.cryptotracker.room.entities.CryptoEntity
@@ -11,9 +12,30 @@ class CryptoRepositoryRoom(
     override suspend fun exists(assetId: String): Boolean =
         dao.getBySymbol(assetId) != null
 
-    suspend fun getAll(): List<CryptoEntity> = dao.getAll()
+    override suspend fun upsertAll(items: List<Crypto>) =
+        dao.upsertAll(items.map { it.toEntity() })
 
-    suspend fun getBySymbol(symbol: String): CryptoEntity? = dao.getBySymbol(symbol)
+    override suspend fun getAll(): List<Crypto> =
+        dao.getAll().map { it.toDomain() }
 
-    suspend fun upsertAll(items: List<CryptoEntity>) = dao.upsertAll(items)
+    override suspend fun findBySymbol(symbol: String): Crypto? =
+        dao.getBySymbol(symbol)?.toDomain()
 }
+
+/* =======================
+   MAPPERS
+   ======================= */
+
+private fun CryptoEntity.toDomain(): Crypto = Crypto(
+    symbol = symbol,
+    name = name,
+    coingeckoId = coingeckoId,
+    isActive = isActive
+)
+
+private fun Crypto.toEntity(): CryptoEntity = CryptoEntity(
+    symbol = symbol,
+    name = name,
+    coingeckoId = coingeckoId,
+    isActive = isActive
+)
