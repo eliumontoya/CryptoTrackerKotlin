@@ -4,14 +4,13 @@ package info.eliumontoyasadec.cryptotracker.domain.views
  * Read models for UI. These are built by Queries (read-only) and are not persisted.
  *
  * Notes:
- * - Prices are optional for now (no prices table yet). When currentPriceUsd is null,
- *   all current* and totalPnl* fields should be treated as unavailable.
+ * - Prices are optional for now (no prices table yet). When currentValueUsd is null,
+ *   totalPnl* fields should be treated as unavailable (null).
  */
-
 data class PortfolioSummaryView(
     val portfolioId: Long,
 
-    // From holdings
+    // From holdings / ledger (Camino 2). For now, Camino 1 will feed 0.0.
     val investedUsd: Double,
     val realizedSalesUsd: Double,
     val realizedPnlUsd: Double,
@@ -30,7 +29,6 @@ data class PortfolioSummaryView(
 /**
  * Row for the "Portfolio by Cryptos" table.
  */
-
 data class PortfolioByCryptoRowView(
     val portfolioId: Long,
     val cryptoSymbol: String,
@@ -38,10 +36,8 @@ data class PortfolioByCryptoRowView(
     // Net position
     val quantity: Double,
 
-    // Cost basis still allocated to remaining quantity
+    // Cost & realized metrics (Camino 2). Camino 1 can keep these as 0.0.
     val costUsd: Double,
-
-    // Realized totals
     val realizedSalesUsd: Double,
     val realizedPnlUsd: Double,
 
@@ -54,7 +50,8 @@ data class PortfolioByCryptoRowView(
 
     val unrealizedPnlUsd: Double? = currentValueUsd?.let { it - costUsd }
 
-    val totalPnlUsd: Double? = if (currentValueUsd == null) null else (realizedPnlUsd + (unrealizedPnlUsd ?: 0.0))
+    val totalPnlUsd: Double? =
+        if (currentValueUsd == null) null else (realizedPnlUsd + (unrealizedPnlUsd ?: 0.0))
 
     /**
      * Total PnL percentage relative to invested cost basis.

@@ -1,10 +1,10 @@
 // File: room/repositories/PortfolioSummaryRoomRepository.kt
 package info.eliumontoyasadec.cryptotracker.room.repositories
 
-import info.eliumontoyasadec.cryptotracker.room.dao.PortfolioSummaryDao
-import info.eliumontoyasadec.cryptotracker.ui.queries.PortfolioTotalRow
-import info.eliumontoyasadec.cryptotracker.ui.queries.PortfolioWalletTotalRow
-import info.eliumontoyasadec.cryptotracker.ui.queries.WalletHoldingRow
+import info.eliumontoyasadec.cryptotracker.room.queries.PortfolioSummaryDao
+import info.eliumontoyasadec.cryptotracker.room.queries.rows.PortfolioTotalRow
+import info.eliumontoyasadec.cryptotracker.room.queries.rows.PortfolioWalletTotalRow
+import info.eliumontoyasadec.cryptotracker.room.queries.rows.WalletHoldingRow
 
 class PortfolioSummaryRepositoryRoom(
     private val dao: PortfolioSummaryDao

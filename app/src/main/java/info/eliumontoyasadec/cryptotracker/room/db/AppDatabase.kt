@@ -10,7 +10,7 @@ import info.eliumontoyasadec.cryptotracker.room.dao.FiatDao
 import info.eliumontoyasadec.cryptotracker.room.dao.HoldingDao
 import info.eliumontoyasadec.cryptotracker.room.dao.MovementDao
 import info.eliumontoyasadec.cryptotracker.room.dao.PortfolioDao
-import info.eliumontoyasadec.cryptotracker.room.dao.PortfolioSummaryDao
+import info.eliumontoyasadec.cryptotracker.room.queries.PortfolioSummaryDao
 import info.eliumontoyasadec.cryptotracker.room.dao.WalletDao
 import info.eliumontoyasadec.cryptotracker.room.queries.PortfolioQueriesDao
 import info.eliumontoyasadec.cryptotracker.room.entities.CryptoEntity
