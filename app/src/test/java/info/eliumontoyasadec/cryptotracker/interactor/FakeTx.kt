@@ -1,5 +1,5 @@
 package info.eliumontoyasadec.cryptotracker.interactor
-import info.eliumontoyasadec.cryptotracker.domain.repositories.AssetRepository
+import info.eliumontoyasadec.cryptotracker.domain.repositories.CryptoRepository
 import info.eliumontoyasadec.cryptotracker.domain.model.Holding
 import info.eliumontoyasadec.cryptotracker.domain.repositories.HoldingRepository
 import info.eliumontoyasadec.cryptotracker.domain.model.Movement
@@ -7,7 +7,6 @@ import info.eliumontoyasadec.cryptotracker.domain.repositories.MovementRepositor
 import info.eliumontoyasadec.cryptotracker.domain.repositories.PortfolioRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.TransactionRunner
 import info.eliumontoyasadec.cryptotracker.domain.repositories.WalletRepository
-import java.util.UUID
 
 
 class FakeTx : TransactionRunner {
@@ -26,7 +25,7 @@ class FakeWalletRepo(
     override suspend fun belongsToPortfolio(walletId: Long, portfolioId: Long) = belongs
 }
 
-class FakeAssetRepo(private val exists: Boolean = true) : AssetRepository {
+class FakeCryptoRepo(private val exists: Boolean = true) : CryptoRepository {
     override suspend fun exists(assetId: String) = exists
 }
 

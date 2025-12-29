@@ -13,8 +13,6 @@ import org.junit.Assert.*
 import org.junit.Test
 import kotlin.test.assertFailsWith
 import info.eliumontoyasadec.cryptotracker.domain.repositories.*
-import java.util.UUID
-
 
 
 class SwapMovementUseCaseTest {
@@ -30,7 +28,7 @@ class SwapMovementUseCaseTest {
         val uc = SwapMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()
@@ -96,7 +94,7 @@ class SwapMovementUseCaseTest {
         val uc = SwapMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()
@@ -134,7 +132,7 @@ class SwapMovementUseCaseTest {
         val uc = SwapMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()
@@ -169,7 +167,7 @@ class SwapMovementUseCaseTest {
         val uc = SwapMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()

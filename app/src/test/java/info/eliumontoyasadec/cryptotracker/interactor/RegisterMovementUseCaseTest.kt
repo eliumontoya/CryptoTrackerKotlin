@@ -22,7 +22,7 @@ class RegisterMovementUseCaseTest {
         val uc = RegisterMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()
@@ -77,7 +77,7 @@ class RegisterMovementUseCaseTest {
         val uc = RegisterMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()

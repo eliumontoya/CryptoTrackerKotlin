@@ -1,4 +1,4 @@
-package info.eliumontoyasadec.cryptotracker.domain.interactor
+package info.eliumontoyasadec.cryptotracker.interactor
 
 import info.eliumontoyasadec.cryptotracker.domain.model.Holding
 import info.eliumontoyasadec.cryptotracker.domain.model.Movement
@@ -171,7 +171,7 @@ class MoveBetweenWalletsUseCaseTest {
     private class Fixture {
         val portfolioRepo = FakePortfolioRepository()
         val walletRepo = FakeWalletRepository()
-        val assetRepo = FakeAssetRepository()
+        val assetRepo = FakeCryptoRepository()
         val movementRepo = FakeMovementRepository()
         val holdingRepo = FakeHoldingRepository()
         val tx = FakeTransactionRunner()
@@ -202,7 +202,7 @@ class MoveBetweenWalletsUseCaseTest {
             walletToPortfolio[walletId] == portfolioId
     }
 
-    private class FakeAssetRepository : AssetRepository {
+    private class FakeCryptoRepository : CryptoRepository {
         val assets = mutableSetOf<String>()
         override suspend fun exists(assetId: String): Boolean = assets.contains(assetId)
     }

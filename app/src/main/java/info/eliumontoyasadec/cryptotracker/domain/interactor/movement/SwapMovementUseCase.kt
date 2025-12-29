@@ -4,12 +4,11 @@ import info.eliumontoyasadec.cryptotracker.domain.model.Movement
 import info.eliumontoyasadec.cryptotracker.domain.model.MovementError
 import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 import info.eliumontoyasadec.cryptotracker.domain.repositories.*
-import java.util.UUID
 
 class SwapMovementUseCase(
     private val portfolioRepo: PortfolioRepository,
     private val walletRepo: WalletRepository,
-    private val assetRepo: AssetRepository,
+    private val assetRepo: CryptoRepository,
     private val movementRepo: MovementRepository,
     private val holdingRepo: HoldingRepository,
     private val tx: TransactionRunner
