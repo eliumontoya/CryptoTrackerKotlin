@@ -9,7 +9,7 @@ import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 class LedgerRepository(
     private val db: AppDatabase
 ) {
-    private val txDao = db.transactionDao()
+    private val txDao = db.movementDao()
     private val holdingDao = db.holdingDao()
 
     suspend fun addTransaction(tx: MovementEntity) {
