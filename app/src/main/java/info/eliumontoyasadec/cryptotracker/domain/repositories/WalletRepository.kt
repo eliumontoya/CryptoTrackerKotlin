@@ -1,6 +1,6 @@
 package info.eliumontoyasadec.cryptotracker.domain.repositories
 
 interface WalletRepository {
-    suspend fun exists(walletId: String): Boolean
-    suspend fun belongsToPortfolio(walletId: String, portfolioId: String): Boolean
+    suspend fun exists(walletId: Long): Boolean
+    suspend fun belongsToPortfolio(walletId: Long, portfolioId: Long): Boolean
 }

@@ -7,7 +7,7 @@ import info.eliumontoyasadec.cryptotracker.room.entities.HoldingEntity
 class ReconciliationService(
     private val db: AppDatabase
 ) {
-    private val txDao = db.transactionDao()
+    private val txDao = db.movementDao()
     private val holdingDao = db.holdingDao()
 
     suspend fun rebuildAllHoldings() {

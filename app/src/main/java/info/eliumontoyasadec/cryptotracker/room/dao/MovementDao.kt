@@ -14,13 +14,13 @@ interface MovementDao {
     suspend fun upsert(entity: MovementEntity)
 
     @Query("SELECT * FROM movements WHERE id = :id LIMIT 1")
-    suspend fun findById(id: String): MovementEntity?
+    suspend fun findById(id: Long): MovementEntity?
 
     @Update
     suspend fun update(entity: MovementEntity)
 
     @Query("DELETE FROM movements WHERE id = :id")
-    suspend fun deleteById(id: String)
+    suspend fun deleteById(id: Long)
 
     @Query(
         """
@@ -31,7 +31,7 @@ interface MovementDao {
         """
     )
     suspend fun listByWallet(
-        portfolioId: String,
-        walletId: String
+        portfolioId: Long,
+        walletId: Long
     ): List<MovementEntity>
 }

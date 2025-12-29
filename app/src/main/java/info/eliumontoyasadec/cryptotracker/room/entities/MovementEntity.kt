@@ -30,10 +30,10 @@ import java.time.Instant
 )
 data class MovementEntity(
     @PrimaryKey
-    val id: String,
+    val id: Long,
 
-    val portfolioId: String,
-    val walletId: String,
+    val portfolioId: Long,
+    val walletId: Long,
     val assetId: String,
 
     val type: MovementType,
@@ -43,6 +43,6 @@ data class MovementEntity(
 
     val timestamp: Long,
     val notes: String?,
-    val groupId: String? = null
+    val groupId: Long? = null
 
 )

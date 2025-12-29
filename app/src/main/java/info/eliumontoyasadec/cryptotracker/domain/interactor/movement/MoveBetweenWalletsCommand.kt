@@ -1,11 +1,11 @@
 package info.eliumontoyasadec.cryptotracker.domain.interactor.movement
 
 data class MoveBetweenWalletsCommand(
-    val portfolioId: String,
-    val fromWalletId: String,
-    val toWalletId: String,
+    val portfolioId: Long,
+    val fromWalletId: Long,
+    val toWalletId: Long,
     val assetId: String,
     val quantity: Double,
     val timestamp: Long,
-    val notes: String? = null
+    val notes: String = ""
 )

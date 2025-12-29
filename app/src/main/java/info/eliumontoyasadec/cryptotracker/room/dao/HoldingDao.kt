@@ -19,8 +19,8 @@ interface HoldingDao {
         """
     )
     suspend fun findByPortfolioWalletAsset(
-        portfolioId: String,
-        walletId: String,
+        portfolioId: Long,
+        walletId: Long,
         assetId: String
     ): HoldingEntity?
 
@@ -36,7 +36,17 @@ interface HoldingDao {
         """
     )
     suspend fun listByWallet(
-        portfolioId: String,
-        walletId: String
+        portfolioId: Long,
+        walletId: Long
     ): List<HoldingEntity>
+
+    @Query(
+        """
+    SELECT * FROM holdings
+    WHERE walletId = :walletId
+      AND assetId = :assetId
+    LIMIT 1
+    """
+    )
+    suspend fun findByWalletAsset(walletId: Long, assetId: String): HoldingEntity?
 }

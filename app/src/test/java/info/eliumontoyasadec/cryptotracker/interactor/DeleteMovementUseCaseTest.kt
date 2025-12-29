@@ -22,16 +22,16 @@ class DeleteMovementUseCaseTest {
     fun `borrar BUY revierte holding y elimina movimiento`() = runTest {
         val movementRepo = FakeMovementRepo().apply {
             seed( Movement(
-                id = "mov-1",
-                portfolioId = "p1",
-                walletId = "w1",
+                id = 1L,
+                portfolioId = 1L,
+                walletId = 1L,
                 assetId = "btc",
                 type = MovementType.BUY,
                 quantity = 1.0,
                 price = 40000.0,
                 feeQuantity = 0.0,
                 timestamp = 1700000000000L,
-                notes = null
+                notes = ""
             )
             )
         }
@@ -39,8 +39,8 @@ class DeleteMovementUseCaseTest {
         val holdingRepo = FakeHoldingRepo().apply {
             holding = Holding(
                 id = "hol-1",
-                portfolioId = "p1",
-                walletId = "w1",
+                portfolioId = 1L,
+                walletId = 1L,
                 assetId = "btc",
                 quantity = 1.0,
                 updatedAt = 1L
@@ -49,9 +49,9 @@ class DeleteMovementUseCaseTest {
 
         val uc = DeleteMovementUseCase(movementRepo, holdingRepo, FakeTx())
 
-        val result = uc.execute(DeleteMovementCommand(movementId = "mov-1"))
+        val result = uc.execute(DeleteMovementCommand(movementId = 1L))
 
-        assertEquals("mov-1", result.movementId)
+        assertEquals(1L, result.movementId)
         assertEquals("hol-1", result.holdingId)
         assertEquals(0.0, result.newHoldingQuantity, 0.0000001)
 
@@ -59,24 +59,24 @@ class DeleteMovementUseCaseTest {
         assertEquals(0.0, holdingRepo.lastUpsertQty!!, 0.0000001)
 
         // movimiento eliminado
-        assertEquals("mov-1", movementRepo.lastDeletedId)
-        assertNull(movementRepo.findById("mov-1"))    }
+        assertEquals(1L, movementRepo.lastDeletedId)
+        assertNull(movementRepo.findById(1L))    }
 
     @Test
     fun `borrar SELL regresa cantidad al holding`() = runTest {
         val movementRepo = FakeMovementRepo().apply {
             seed(
                 Movement(
-                id = "mov-2",
-                portfolioId = "p1",
-                walletId = "w1",
+                id = 2L,
+                portfolioId = 1L,
+                walletId = 1L,
                 assetId = "btc",
                 type = MovementType.SELL,
                 quantity = 0.2,
                 price = 45000.0,
                 feeQuantity = 0.0,
                 timestamp = 1700000000000L,
-                notes = null
+                notes = ""
             )
             )
         }
@@ -84,8 +84,8 @@ class DeleteMovementUseCaseTest {
         val holdingRepo = FakeHoldingRepo().apply {
             holding = Holding(
                 id = "hol-2",
-                portfolioId = "p1",
-                walletId = "w1",
+                portfolioId = 1L,
+                walletId = 1L,
                 assetId = "btc",
                 quantity = 0.8,
                 updatedAt = 1L
@@ -94,27 +94,27 @@ class DeleteMovementUseCaseTest {
 
         val uc = DeleteMovementUseCase(movementRepo, holdingRepo, FakeTx())
 
-        val result = uc.execute(DeleteMovementCommand("mov-2"))
+        val result = uc.execute(DeleteMovementCommand(2L))
 
         assertEquals(1.0, result.newHoldingQuantity, 0.0000001)
         assertEquals(1.0, holdingRepo.lastUpsertQty!!, 0.0000001)
-        assertEquals("mov-2", movementRepo.lastDeletedId)
+        assertEquals(2L, movementRepo.lastDeletedId)
     }
 
     @Test
     fun `borrar falla si resultaria holding negativo y no elimina`() = runTest {
         val movementRepo = FakeMovementRepo().apply {
             seed( Movement(
-                id = "mov-3",
-                portfolioId = "p1",
-                walletId = "w1",
+                id = 3L,
+                portfolioId = 1L,
+                walletId = 1L,
                 assetId = "btc",
                 type = MovementType.BUY,
                 quantity = 1.0,
                 price = 40000.0,
                 feeQuantity = 0.0,
                 timestamp = 1700000000000L,
-                notes = null
+                notes = ""
             )
             )
         }
@@ -122,8 +122,8 @@ class DeleteMovementUseCaseTest {
         val holdingRepo = FakeHoldingRepo().apply {
             holding = Holding(
                 id = "hol-3",
-                portfolioId = "p1",
-                walletId = "w1",
+                portfolioId = 1L,
+                walletId = 1L,
                 assetId = "btc",
                 quantity = 0.2, // inconsistente vs movimiento
                 updatedAt = 1L
@@ -133,12 +133,12 @@ class DeleteMovementUseCaseTest {
         val uc = DeleteMovementUseCase(movementRepo, holdingRepo, FakeTx())
 
         assertFailsWith<MovementError.InsufficientHoldings> {
-            uc.execute(DeleteMovementCommand("mov-3"))
+            uc.execute(DeleteMovementCommand(3L))
         }
 
         // No borró, no tocó holding
         assertNull(movementRepo.lastDeletedId)
         assertNull(holdingRepo.lastUpsertQty)
-        assertNotNull(movementRepo.findById("mov-3"))     }
+        assertNotNull(movementRepo.findById(3L))     }
 
 }

@@ -20,8 +20,8 @@ class RegisterMovementUseCase(
 
     suspend fun execute(cmd: RegisterMovementCommand): RegisterMovementResult = tx.runInTransaction {
         // 1) Validación de entrada
-        if (cmd.portfolioId.isBlank()) throw MovementError.InvalidInput("portfolioId es requerido")
-        if (cmd.walletId.isBlank()) throw MovementError.InvalidInput("walletId es requerido")
+        if (cmd.portfolioId == 0L) throw MovementError.InvalidInput("portfolioId es requerido")
+        if (cmd.walletId == 0L) throw MovementError.InvalidInput("walletId es requerido")
         if (cmd.assetId.isBlank()) throw MovementError.InvalidInput("assetId es requerido")
         if (cmd.quantity <= 0.0) throw MovementError.InvalidInput("quantity debe ser > 0")
         if (cmd.timestamp <= 0L) throw MovementError.InvalidInput("timestamp inválido")

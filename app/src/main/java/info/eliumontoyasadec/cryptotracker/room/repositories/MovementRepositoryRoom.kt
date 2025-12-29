@@ -3,31 +3,32 @@ package info.eliumontoyasadec.cryptotracker.room.repositories
 import androidx.room.withTransaction
 import info.eliumontoyasadec.cryptotracker.domain.model.Holding
 import info.eliumontoyasadec.cryptotracker.domain.model.Movement
-import info.eliumontoyasadec.cryptotracker.domain.repositories.HoldingRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.MovementRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.TransactionRunner
-import info.eliumontoyasadec.cryptotracker.room.dao.HoldingDao
 import info.eliumontoyasadec.cryptotracker.room.dao.MovementDao
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.room.entities.HoldingEntity
 import info.eliumontoyasadec.cryptotracker.room.entities.MovementEntity
-import java.util.UUID
 
 class MovementRepositoryRoom(
     private val dao: MovementDao
 ) : MovementRepository {
 
-    override suspend fun insert(movement: Movement): String {
-        val id = movement.id.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString()
-        dao.upsert(movement.toEntity(id))
-        return id
+    override suspend fun insert(movement: Movement): Long {
+        // Si el id es 0, Room lo genera
+        val entity = movement.toEntity(
+            id = if (movement.id > 0) movement.id else 0L
+        )
+        dao.upsert(entity)
+        return entity.id
     }
 
-    override suspend fun findById(movementId: String): Movement? {
+
+    override suspend fun findById(movementId: Long): Movement? {
         return dao.findById(movementId)?.toDomain()
     }
 
-    override suspend fun update(movementId: String, update: Movement) {
+    override suspend fun update(movementId: Long, update: Movement) {
         val old = dao.findById(movementId) ?: return
 
         // Mantengo ids/base. Solo actualizo el contenido editable.
@@ -44,7 +45,7 @@ class MovementRepositoryRoom(
         dao.update(merged)
     }
 
-    override suspend fun delete(movementId: String) {
+    override suspend fun delete(movementId: Long) {
         dao.deleteById(movementId)
     }
 }
@@ -62,7 +63,7 @@ class TransactionRunnerRoom(
    MAPPERS
    ======================= */
 
-private fun Movement.toEntity(id: String): MovementEntity = MovementEntity(
+private fun Movement.toEntity(id: Long): MovementEntity = MovementEntity(
     id = id,
     portfolioId = portfolioId,
     walletId = walletId,
@@ -99,5 +100,5 @@ fun HoldingEntity.toDomain(): Holding = Holding(
     updatedAt = updatedAt
 )
 
-fun holdingKey(portfolioId: String, walletId: String, assetId: String): String =
+fun holdingKey(portfolioId: Long, walletId: Long, assetId: String): String =
     "$portfolioId|$walletId|$assetId"

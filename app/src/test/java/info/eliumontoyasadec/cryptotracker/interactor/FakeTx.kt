@@ -15,15 +15,15 @@ class FakeTx : TransactionRunner {
 }
 
 class FakePortfolioRepo(private val exists: Boolean = true) : PortfolioRepository {
-    override suspend fun exists(portfolioId: String) = exists
+    override suspend fun exists(portfolioId: Long) = exists
 }
 
 class FakeWalletRepo(
     private val exists: Boolean = true,
     private val belongs: Boolean = true
 ) : WalletRepository {
-    override suspend fun exists(walletId: String) = exists
-    override suspend fun belongsToPortfolio(walletId: String, portfolioId: String) = belongs
+    override suspend fun exists(walletId: Long) = exists
+    override suspend fun belongsToPortfolio(walletId: Long, portfolioId: Long) = belongs
 }
 
 class FakeAssetRepo(private val exists: Boolean = true) : AssetRepository {
@@ -34,16 +34,16 @@ class FakeAssetRepo(private val exists: Boolean = true) : AssetRepository {
 class FakeMovementRepo : MovementRepository {
 
     /** Base de datos en memoria */
-    private val store = mutableMapOf<String, Movement>()
+    private val store = mutableMapOf<Long, Movement>()
 
     /** Hooks de verificación para tests */
     var lastInserted: Movement? = null
         private set
 
-    var lastUpdateId: String? = null
+    var lastUpdateId: Long? = null
         private set
 
-    var lastDeletedId: String? = null
+    var lastDeletedId: Long? = null
         private set
 
     /** Utilidad para preparar escenarios desde el test */
@@ -51,8 +51,8 @@ class FakeMovementRepo : MovementRepository {
         store[movement.id] = movement
     }
 
-    override suspend fun insert(movement: Movement): String {
-        val id = UUID.randomUUID().toString()
+    override suspend fun insert(movement: Movement): Long {
+        val id = System.currentTimeMillis()
 
         val movement = Movement(
             id = id,
@@ -74,11 +74,11 @@ class FakeMovementRepo : MovementRepository {
         return id
     }
 
-    override suspend fun findById(movementId: String): Movement? {
+    override suspend fun findById(movementId: Long): Movement? {
         return store[movementId]
     }
 
-    override suspend fun update(movementId: String, update: Movement) {
+    override suspend fun update(movementId: Long, update: Movement) {
         val existing = store[movementId] ?: return
 
         store[movementId] = existing.copy(
@@ -93,7 +93,7 @@ class FakeMovementRepo : MovementRepository {
         lastUpdateId = movementId
     }
 
-    override suspend fun delete(movementId: String) {
+    override suspend fun delete(movementId: Long) {
         store.remove(movementId)
         lastDeletedId = movementId
     }
@@ -104,13 +104,13 @@ class FakeHoldingRepo : HoldingRepository {
     var lastUpsertQty: Double? = null
 
 
-    override suspend fun findByWalletAsset(walletId: String, assetId: String): Holding? =
+    override suspend fun findByWalletAsset(walletId: Long, assetId: String): Holding? =
         holding?.takeIf { it.walletId == walletId && it.assetId == assetId }
 
 
     override suspend fun upsert(
-        portfolioId: String,
-        walletId: String,
+        portfolioId: Long,
+        walletId: Long,
         assetId: String,
         newQuantity: Double,
         updatedAt: Long

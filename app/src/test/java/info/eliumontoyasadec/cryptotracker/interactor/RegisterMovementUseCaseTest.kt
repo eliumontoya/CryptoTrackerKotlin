@@ -29,15 +29,15 @@ class RegisterMovementUseCaseTest {
         )
 
         val cmd = RegisterMovementCommand(
-            portfolioId = "p1",
-            walletId = "w1",
+            portfolioId = 1L,
+            walletId = 1L,
             assetId = "btc",
             type = MovementType.BUY,
             quantity = 0.5,
             price = 45000.0,
             feeQuantity = 0.001,
             timestamp = 1700000000000L,
-            notes = null
+            notes = ""
         )
 
         val result = uc.execute(cmd)
@@ -46,8 +46,8 @@ class RegisterMovementUseCaseTest {
         //assertEquals("mov-001", result.movementId)
         //assertNotNull(movementRepo.findById("mov-001"))
         assertNotNull(movementRepo.lastInserted)
-        assertEquals("p1", movementRepo.lastInserted!!.portfolioId)
-        assertEquals("w1", movementRepo.lastInserted!!.walletId)
+        assertEquals(1L, movementRepo.lastInserted!!.portfolioId)
+        assertEquals(1L, movementRepo.lastInserted!!.walletId)
         assertEquals("btc", movementRepo.lastInserted!!.assetId)
         assertEquals(MovementType.BUY, movementRepo.lastInserted!!.type)
         assertEquals(0.5, movementRepo.lastInserted!!.quantity, 0.0)
@@ -66,8 +66,8 @@ class RegisterMovementUseCaseTest {
         val holdingRepo = FakeHoldingRepo().apply {
             holding = Holding(
                 id = "hol-777",
-                portfolioId = "p1",
-                walletId = "w1",
+                portfolioId = 1L,
+                walletId = 1L,
                 assetId = "btc",
                 quantity = 0.1,
                 updatedAt = 1L
@@ -84,16 +84,15 @@ class RegisterMovementUseCaseTest {
         )
 
         val cmd = RegisterMovementCommand(
-            portfolioId = "p1",
-            walletId = "w1",
+            portfolioId = 1L,
+            walletId = 1L,
             assetId = "btc",
             type = MovementType.SELL,
             quantity = 0.2,           // quiere vender 0.2
             price = 45000.0,
             feeQuantity = 0.0,
             timestamp = 1700000000000L,
-            notes = null
-        )
+         )
 
         // IMPORTANTE: como execute() es suspend, usamos assertFailsWith dentro de runTest
         assertFailsWith<MovementError.InsufficientHoldings> {

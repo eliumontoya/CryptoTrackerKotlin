@@ -29,8 +29,8 @@ import androidx.room.PrimaryKey
 )
 data class HoldingEntity(
     @PrimaryKey val id: String, // "$portfolioId|$walletId|$assetId"
-    val portfolioId: String,
-    val walletId: String,
+    val portfolioId: Long,
+    val walletId: Long,
     val assetId: String,
     val quantity: Double,
     val updatedAt: Long

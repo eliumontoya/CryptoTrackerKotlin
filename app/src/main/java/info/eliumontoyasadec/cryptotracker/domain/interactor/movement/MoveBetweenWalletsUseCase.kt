@@ -37,9 +37,9 @@ class MoveBetweenWalletsUseCase(
         tx.runInTransaction {
 
             // 1) Validaciones básicas
-            if (cmd.portfolioId.isBlank()) throw MovementError.InvalidInput("portfolioId requerido")
-            if (cmd.fromWalletId.isBlank()) throw MovementError.InvalidInput("fromWalletId requerido")
-            if (cmd.toWalletId.isBlank()) throw MovementError.InvalidInput("toWalletId requerido")
+            if (cmd.portfolioId == 0L) throw MovementError.InvalidInput("portfolioId requerido")
+            if (cmd.fromWalletId == 0L) throw MovementError.InvalidInput("fromWalletId requerido")
+            if (cmd.toWalletId == 0L) throw MovementError.InvalidInput("toWalletId requerido")
             if (cmd.fromWalletId == cmd.toWalletId)
                 throw MovementError.InvalidInput("Las wallets deben ser distintas")
 
@@ -81,8 +81,9 @@ class MoveBetweenWalletsUseCase(
             val currentToQty = toHolding?.quantity ?: 0.0
             val newToQty = currentToQty + cmd.quantity
 
-            // 5) Persistencia atómica
-            val groupId = UUID.randomUUID().toString()
+            // 5) Persistencia atómica Todo: cambiar eesto a que la bd sea el que haga el groupid
+            //val groupId = UUID.randomUUID().toString()
+            val groupId = System.currentTimeMillis()
 
             val transferOutId = movementRepo.insert(
                 Movement(
