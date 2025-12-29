@@ -3,9 +3,9 @@ package info.eliumontoyasadec.cryptotracker.room.repositories
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
-import info.eliumontoyasadec.cryptotracker.room.entities.FiatEntity
+import info.eliumontoyasadec.cryptotracker.domain.model.Fiat
 import info.eliumontoyasadec.cryptotracker.room.RoomTestSeed
+import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
@@ -24,7 +24,9 @@ class FiatRepositoryRoomTest {
         db = Room.inMemoryDatabaseBuilder(
             ApplicationProvider.getApplicationContext(),
             AppDatabase::class.java
-        ).allowMainThreadQueries().build()
+        )
+            .allowMainThreadQueries()
+            .build()
 
         RoomTestSeed.enableForeignKeys(db.openHelper.writableDatabase)
 
@@ -32,29 +34,40 @@ class FiatRepositoryRoomTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        db.close()
+    }
 
     @Test
-    fun upsertAll_getAll_ordering_getByCode_replace() = runTest {
+    fun upsertAll_getAll_ordering_findByCode_replace() = runTest {
         repo.upsertAll(
             listOf(
-                FiatEntity(code = "USD", name = "US Dollar", symbol = "$"),
-                FiatEntity(code = "MXN", name = "Mexican Peso", symbol = "$")
+                Fiat(code = "USD", name = "US Dollar", symbol = "$"),
+                Fiat(code = "MXN", name = "Mexican Peso", symbol = "$")
             )
         )
 
         val all = repo.getAll()
         assertEquals(2, all.size)
-        // ORDER BY code ASC
+        // ORDER BY code ASC (lo define el DAO)
         assertEquals("MXN", all[0].code)
         assertEquals("USD", all[1].code)
 
-        val mxn = repo.getByCode("MXN")
+        val mxn = repo.findByCode("MXN")
         assertNotNull(mxn)
         assertEquals("Mexican Peso", mxn!!.name)
 
-        repo.upsertAll(listOf(FiatEntity(code = "MXN", name = "Peso Mexicano", symbol = "$")))
-        val mxn2 = repo.getByCode("MXN")
+        // replace
+        repo.upsertAll(listOf(Fiat(code = "MXN", name = "Peso Mexicano", symbol = "$")))
+        val mxn2 = repo.findByCode("MXN")
         assertEquals("Peso Mexicano", mxn2!!.name)
+    }
+
+    @Test
+    fun exists_returnsTrue_whenPresent() = runTest {
+        assertFalse(repo.exists("EUR"))
+
+        repo.upsertAll(listOf(Fiat(code = "EUR", name = "Euro", symbol = "€")))
+        assertTrue(repo.exists("EUR"))
     }
 }
