@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
@@ -27,8 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
+ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -46,8 +45,7 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import info.eliumontoyasadec.cryptotracker.ui.admin.AdminScreen
-import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
+ import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
 import info.eliumontoyasadec.cryptotracker.ui.factories.PortfolioViewModelFactory
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
@@ -137,7 +135,7 @@ fun AppShell() {
                         if (isDetailScreen) {
                             IconButton(onClick = { navController.popBackStack() }) {
                                 Icon(
-                                    imageVector = Icons.Default.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Back"
                                 )
                             }
@@ -497,7 +495,6 @@ fun AppShell() {
                     style = MaterialTheme.typography.bodySmall
                 )
 
-                Divider()
 
                 Text("Cartera", style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -645,11 +642,7 @@ private fun DrawerItem(
         modifier = modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
     )
 }
-@Composable
-private fun currentRoute(navController: NavHostController): String? {
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    return backStackEntry?.destination?.route
-}
+
 
 private fun routeToTitle(route: String?): String = when (route) {
     AppDestination.Portfolio.route -> "Portafolio"
