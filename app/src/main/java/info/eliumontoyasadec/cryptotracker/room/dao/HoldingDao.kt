@@ -9,7 +9,7 @@ interface HoldingDao {
     @Query("""
         SELECT * FROM holdings
         WHERE walletId = :walletId
-        ORDER BY cryptoSymbol ASC
+        ORDER BY assetId ASC
     """)
     suspend fun getByWallet(walletId: Long): List<HoldingEntity>
 
@@ -22,15 +22,15 @@ interface HoldingDao {
     @Query("""
         SELECT
             h.walletId            AS walletId,
-            h.cryptoSymbol        AS cryptoSymbol,
+            h.assetId        AS cryptoSymbol,
             SUM(h.quantity)       AS quantity,
             SUM(h.costUsd)        AS costUsd,
             SUM(h.realizedSalesUsd) AS realizedSalesUsd,
             SUM(h.realizedPnlUsd)   AS realizedPnlUsd
         FROM holdings h
         WHERE h.walletId = :walletId
-        GROUP BY h.cryptoSymbol
-        ORDER BY h.cryptoSymbol ASC
+        GROUP BY h.assetId
+        ORDER BY h.assetId ASC
     """)
     suspend fun aggregateByCryptoForWallet(walletId: Long): List<WalletByCryptoRow>
 
@@ -51,7 +51,7 @@ interface HoldingDao {
 
     @Query("""
         SELECT * FROM holdings
-        WHERE walletId = :walletId AND cryptoSymbol = :symbol
+        WHERE walletId = :walletId AND assetId = :symbol
         LIMIT 1
     """)
     suspend fun find(walletId: Long, symbol: String): HoldingEntity?
@@ -63,7 +63,7 @@ interface HoldingDao {
         UPDATE holdings
         SET quantity = quantity + :delta,
             updatedAt = :updatedAt
-        WHERE holdingId = :holdingId
+        WHERE id = :holdingId
     """)
     suspend fun applyDelta(holdingId: Long, delta: Double, updatedAt: Long)
 
@@ -72,6 +72,48 @@ interface HoldingDao {
 
     @Query("DELETE FROM holdings")
     suspend fun deleteAll()
+
+
+    @Query(
+        """
+        SELECT * FROM holdings
+        WHERE portfolioId = :portfolioId
+          AND walletId = :walletId
+          AND assetId = :assetId
+        LIMIT 1
+        """
+    )
+    suspend fun findByPortfolioWalletAsset(
+        portfolioId: Long,
+        walletId: Long,
+        assetId: String
+    ): HoldingEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: HoldingEntity)
+
+    @Query(
+        """
+        SELECT * FROM holdings
+        WHERE portfolioId = :portfolioId
+          AND walletId = :walletId
+        ORDER BY assetId ASC
+        """
+    )
+    suspend fun listByWallet(
+        portfolioId: Long,
+        walletId: Long
+    ): List<HoldingEntity>
+
+    @Query(
+        """
+    SELECT * FROM holdings
+    WHERE walletId = :walletId
+      AND assetId = :assetId
+    LIMIT 1
+    """
+    )
+    suspend fun findByWalletAsset(walletId: Long, assetId: String): HoldingEntity?
 }
 
  /**

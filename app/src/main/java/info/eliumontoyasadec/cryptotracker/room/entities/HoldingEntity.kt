@@ -17,22 +17,21 @@ import androidx.room.PrimaryKey
         ForeignKey(
             entity = CryptoEntity::class,
             parentColumns = ["symbol"],
-            childColumns = ["cryptoSymbol"],
+            childColumns = ["assetId"],
             onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [
         Index("walletId"),
-        Index("cryptoSymbol"),
-        Index(value = ["walletId", "cryptoSymbol"], unique = true)
+        Index("assetId"),
+        Index(value = ["portfolioId", "walletId", "assetId"], unique = true)
     ]
 )
 data class HoldingEntity(
-    @PrimaryKey(autoGenerate = true)
-    val holdingId: Long = 0,
+    @PrimaryKey val id: String, // "$portfolioId|$walletId|$assetId"
+    val portfolioId: Long,
     val walletId: Long,
-    val cryptoSymbol: String,
-
+    val assetId: String,
     // Net position
     val quantity: Double,
 

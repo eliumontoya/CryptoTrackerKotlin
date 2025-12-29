@@ -6,6 +6,9 @@ import info.eliumontoyasadec.cryptotracker.domain.model.MovementError
 import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 import info.eliumontoyasadec.cryptotracker.domain.repositories.*
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.*
+import info.eliumontoyasadec.cryptotracker.domain.model.Crypto
+import info.eliumontoyasadec.cryptotracker.domain.model.Portfolio
+import info.eliumontoyasadec.cryptotracker.domain.model.Wallet
 
 
 import kotlinx.coroutines.test.runTest
@@ -193,6 +196,29 @@ class MoveBetweenWalletsUseCaseTest {
     private class FakePortfolioRepository : PortfolioRepository {
         val portfolios = mutableSetOf<Long>()
         override suspend fun exists(portfolioId: Long): Boolean = portfolios.contains(portfolioId)
+        override suspend fun insert(portfolio: Portfolio): Long {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun findById(portfolioId: Long): Portfolio? {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun getAll(): List<Portfolio> {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun getDefault(): Portfolio? {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun update(portfolio: Portfolio) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun delete(portfolioId: Long) {
+            TODO("Not yet implemented")
+        }
     }
 
     private class FakeWalletRepository : WalletRepository {
@@ -200,11 +226,42 @@ class MoveBetweenWalletsUseCaseTest {
         override suspend fun exists(walletId: Long): Boolean = walletToPortfolio.containsKey(walletId)
         override suspend fun belongsToPortfolio(walletId: Long, portfolioId: Long): Boolean =
             walletToPortfolio[walletId] == portfolioId
+
+        override suspend fun insert(wallet: Wallet): Long {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun findById(walletId: Long): Wallet? {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun getByPortfolio(portfolioId: Long): List<Wallet> {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun update(wallet: Wallet) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun delete(walletId: Long) {
+            TODO("Not yet implemented")
+        }
     }
 
     private class FakeCryptoRepository : CryptoRepository {
         val assets = mutableSetOf<String>()
         override suspend fun exists(assetId: String): Boolean = assets.contains(assetId)
+        override suspend fun upsertAll(items: List<Crypto>) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun getAll(): List<Crypto> {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun findBySymbol(symbol: String): Crypto? {
+            TODO("Not yet implemented")
+        }
     }
 
     private class FakeMovementRepository : MovementRepository {

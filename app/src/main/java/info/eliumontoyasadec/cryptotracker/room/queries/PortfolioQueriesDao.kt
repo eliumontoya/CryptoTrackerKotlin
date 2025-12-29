@@ -10,7 +10,7 @@ interface PortfolioQueriesDao {
     @Query("""
         SELECT
             w.portfolioId            AS portfolioId,
-            h.cryptoSymbol           AS cryptoSymbol,
+            h.assetId           AS cryptoSymbol,
             IFNULL(SUM(h.quantity), 0)          AS quantity,
             IFNULL(SUM(h.costUsd), 0)           AS costUsd,
             IFNULL(SUM(h.realizedSalesUsd), 0)  AS realizedSalesUsd,
@@ -18,8 +18,8 @@ interface PortfolioQueriesDao {
         FROM holdings h
         INNER JOIN wallets w ON w.walletId = h.walletId
         WHERE w.portfolioId = :portfolioId
-        GROUP BY h.cryptoSymbol
-        ORDER BY h.cryptoSymbol ASC
+        GROUP BY h.assetId
+        ORDER BY h.assetId ASC
     """)
     fun portfolioByCryptos(portfolioId: Long): Flow<List<PortfolioByCryptoRow>>
 
