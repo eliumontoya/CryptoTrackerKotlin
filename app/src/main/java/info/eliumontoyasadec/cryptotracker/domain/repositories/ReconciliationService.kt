@@ -7,12 +7,12 @@ import info.eliumontoyasadec.cryptotracker.room.entities.HoldingEntity
 class ReconciliationService(
     private val db: AppDatabase
 ) {
-    private val txDao = db.transactionDao()
+    private val txDao = db.movementDao()
     private val holdingDao = db.holdingDao()
 
     suspend fun rebuildAllHoldings() {
         val now = System.currentTimeMillis()
-
+/*
         db.withTransaction {
             holdingDao.deleteAll()
             val rows = txDao.computeBalancesAll()
@@ -27,11 +27,13 @@ class ReconciliationService(
                 )
             }
         }
+
+ */
     }
 
     suspend fun rebuildHoldingsForWallet(walletId: Long) {
         val now = System.currentTimeMillis()
-
+/*
         db.withTransaction {
             holdingDao.deleteByWallet(walletId)
             val rows = txDao.computeBalancesByWallet(walletId)
@@ -47,4 +49,6 @@ class ReconciliationService(
             }
         }
     }
-}
+
+ */
+    }}

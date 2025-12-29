@@ -1,4 +1,4 @@
-package info.eliumontoyasadec.cryptotracker.domain.interactor
+package info.eliumontoyasadec.cryptotracker.interactor
 
 import info.eliumontoyasadec.cryptotracker.domain.model.Holding
 import info.eliumontoyasadec.cryptotracker.domain.model.Movement
@@ -17,21 +17,21 @@ class MoveBetweenWalletsUseCaseTest {
     @Test
     fun `mueve entre wallets y crea 2 movimientos con mismo groupId`() = runTest {
         val f = Fixture()
-        f.portfolioRepo.portfolios += "p1"
-        f.walletRepo.walletToPortfolio["w1"] = "p1"
-        f.walletRepo.walletToPortfolio["w2"] = "p1"
+        f.portfolioRepo.portfolios += 1L
+        f.walletRepo.walletToPortfolio[1L] = 1L
+        f.walletRepo.walletToPortfolio[2L] = 1L
         f.assetRepo.assets += "btc"
 
-        f.holdingRepo.putHolding("h1", "p1", "w1", "btc", 2.0)
-        f.holdingRepo.putHolding("h2", "p1", "w2", "btc", 5.0)
+        f.holdingRepo.putHolding("h1", 1L, 1L, "btc", 2.0)
+        f.holdingRepo.putHolding("h2", 1L, 2L,  "btc", 5.0)
 
         val uc = f.useCase()
 
         val res = uc.execute(
             MoveBetweenWalletsCommand(
-                portfolioId = "p1",
-                fromWalletId = "w1",
-                toWalletId = "w2",
+                portfolioId = 1L,
+                fromWalletId = 1L,
+                toWalletId = 2L,
                 assetId = "btc",
                 quantity = 0.75,
                 timestamp = 1700000000000L,
@@ -39,26 +39,25 @@ class MoveBetweenWalletsUseCaseTest {
             )
         )
 
-        assertTrue(res.groupId.isNotBlank())
         assertEquals(2, f.movementRepo.inserted.size)
 
         val out = f.movementRepo.inserted[0]
         val inn = f.movementRepo.inserted[1]
 
         assertEquals(MovementType.TRANSFER_OUT, out.type)
-        assertEquals("w1", out.walletId)
+        assertEquals(1L,  out.walletId)
         assertEquals("btc", out.assetId)
         assertEquals(0.75, out.quantity, 0.000001)
         assertEquals(res.groupId, out.groupId)
 
         assertEquals(MovementType.TRANSFER_IN, inn.type)
-        assertEquals("w2", inn.walletId)
+        assertEquals(2L,  inn.walletId)
         assertEquals("btc", inn.assetId)
         assertEquals(0.75, inn.quantity, 0.000001)
         assertEquals(res.groupId, inn.groupId)
 
-        val fromH = f.holdingRepo.findByWalletAsset("w1", "btc")!!
-        val toH = f.holdingRepo.findByWalletAsset("w2", "btc")!!
+        val fromH = f.holdingRepo.findByWalletAsset(1L,  "btc")!!
+        val toH = f.holdingRepo.findByWalletAsset(2L,  "btc")!!
 
         assertEquals(1.25, fromH.quantity, 0.000001) // 2.0 - 0.75
         assertEquals(5.75, toH.quantity, 0.000001)   // 5.0 + 0.75
@@ -67,29 +66,29 @@ class MoveBetweenWalletsUseCaseTest {
     @Test
     fun `si el holding destino no existe lo crea con la cantidad recibida`() = runTest {
         val f = Fixture()
-        f.portfolioRepo.portfolios += "p1"
-        f.walletRepo.walletToPortfolio["w1"] = "p1"
-        f.walletRepo.walletToPortfolio["w2"] = "p1"
+        f.portfolioRepo.portfolios += 1L
+        f.walletRepo.walletToPortfolio[1L] = 1L
+        f.walletRepo.walletToPortfolio[2L] = 1L
         f.assetRepo.assets += "btc"
 
-        f.holdingRepo.putHolding("h1", "p1", "w1", "btc", 1.0)
+        f.holdingRepo.putHolding("h1", 1L, 1L, "btc", 1.0)
         // w2 no tiene holding btc
 
         val uc = f.useCase()
 
         uc.execute(
             MoveBetweenWalletsCommand(
-                portfolioId = "p1",
-                fromWalletId = "w1",
-                toWalletId = "w2",
+                portfolioId = 1L,
+                fromWalletId = 1L,
+                toWalletId = 2L,
                 assetId = "btc",
                 quantity = 0.4,
                 timestamp = 1700000000000L
             )
         )
 
-        val fromH = f.holdingRepo.findByWalletAsset("w1", "btc")!!
-        val toH = f.holdingRepo.findByWalletAsset("w2", "btc")!!
+        val fromH = f.holdingRepo.findByWalletAsset(1L, "btc")!!
+        val toH = f.holdingRepo.findByWalletAsset(2L, "btc")!!
 
         assertEquals(0.6, fromH.quantity, 0.000001)
         assertEquals(0.4, toH.quantity, 0.000001)
@@ -98,21 +97,21 @@ class MoveBetweenWalletsUseCaseTest {
     @Test
     fun `falla si holdings origen insuficientes y no inserta nada`() = runTest {
         val f = Fixture()
-        f.portfolioRepo.portfolios += "p1"
-        f.walletRepo.walletToPortfolio["w1"] = "p1"
-        f.walletRepo.walletToPortfolio["w2"] = "p1"
+        f.portfolioRepo.portfolios += 1L
+        f.walletRepo.walletToPortfolio[1L] = 1L
+        f.walletRepo.walletToPortfolio[2L] = 1L
         f.assetRepo.assets += "btc"
 
-        f.holdingRepo.putHolding("h1", "p1", "w1", "btc", 0.2)
+        f.holdingRepo.putHolding("h1", 1L, 1L, "btc", 0.2)
 
         val uc = f.useCase()
 
         try {
             uc.execute(
                 MoveBetweenWalletsCommand(
-                    portfolioId = "p1",
-                    fromWalletId = "w1",
-                    toWalletId = "w2",
+                    portfolioId = 1L,
+                    fromWalletId = 1L,
+                    toWalletId = 2L,
                     assetId = "btc",
                     quantity = 1.0,
                     timestamp = 1700000000000L
@@ -125,40 +124,42 @@ class MoveBetweenWalletsUseCaseTest {
 
         assertEquals(0, f.movementRepo.inserted.size)
         // no debió tocar holdings destino
-        assertNull(f.holdingRepo.findByWalletAsset("w2", "btc"))
+        assertNull(f.holdingRepo.findByWalletAsset(2L, "btc"))
         // holding origen intacto
-        assertEquals(0.2, f.holdingRepo.findByWalletAsset("w1", "btc")!!.quantity, 0.000001)
+        assertEquals(0.2, f.holdingRepo.findByWalletAsset(1L, "btc")!!.quantity, 0.000001)
     }
 
     @Test
     fun `invariante - la suma total del asset entre ambas wallets se mantiene`() = runTest {
         val f = Fixture()
-        f.portfolioRepo.portfolios += "p1"
-        f.walletRepo.walletToPortfolio["w1"] = "p1"
-        f.walletRepo.walletToPortfolio["w2"] = "p1"
+        f.portfolioRepo.portfolios += 1L
+        f.walletRepo.walletToPortfolio[1L] = 1L
+        f.walletRepo.walletToPortfolio[2L] = 1L
         f.assetRepo.assets += "btc"
 
-        f.holdingRepo.putHolding("h1", "p1", "w1", "btc", 3.0)
-        f.holdingRepo.putHolding("h2", "p1", "w2", "btc", 7.0)
+        f.holdingRepo.putHolding("h1", 1L, 1L, "btc", 3.0)
+        f.holdingRepo.putHolding("h2", 1L, 2L, "btc", 7.0)
 
-        val beforeSum = f.holdingRepo.findByWalletAsset("w1", "btc")!!.quantity +
-                f.holdingRepo.findByWalletAsset("w2", "btc")!!.quantity
+
+
+        val beforeSum = f.holdingRepo.findByWalletAsset(1L, "btc")!!.quantity +
+                f.holdingRepo.findByWalletAsset(2L, "btc")!!.quantity
 
         val uc = f.useCase()
 
         uc.execute(
             MoveBetweenWalletsCommand(
-                portfolioId = "p1",
-                fromWalletId = "w1",
-                toWalletId = "w2",
+                portfolioId = 1L,
+                fromWalletId = 1L,
+                toWalletId = 2L,
                 assetId = "btc",
                 quantity = 2.5,
                 timestamp = 1700000000000L
             )
         )
 
-        val afterSum = f.holdingRepo.findByWalletAsset("w1", "btc")!!.quantity +
-                f.holdingRepo.findByWalletAsset("w2", "btc")!!.quantity
+        val afterSum = f.holdingRepo.findByWalletAsset(1L, "btc")!!.quantity +
+                f.holdingRepo.findByWalletAsset(2L, "btc")!!.quantity
 
         assertEquals(beforeSum, afterSum, 0.000001)
     }
@@ -170,7 +171,7 @@ class MoveBetweenWalletsUseCaseTest {
     private class Fixture {
         val portfolioRepo = FakePortfolioRepository()
         val walletRepo = FakeWalletRepository()
-        val assetRepo = FakeAssetRepository()
+        val assetRepo = FakeCryptoRepository()
         val movementRepo = FakeMovementRepository()
         val holdingRepo = FakeHoldingRepository()
         val tx = FakeTransactionRunner()
@@ -190,42 +191,42 @@ class MoveBetweenWalletsUseCaseTest {
     }
 
     private class FakePortfolioRepository : PortfolioRepository {
-        val portfolios = mutableSetOf<String>()
-        override suspend fun exists(portfolioId: String): Boolean = portfolios.contains(portfolioId)
+        val portfolios = mutableSetOf<Long>()
+        override suspend fun exists(portfolioId: Long): Boolean = portfolios.contains(portfolioId)
     }
 
     private class FakeWalletRepository : WalletRepository {
-        val walletToPortfolio = mutableMapOf<String, String>()
-        override suspend fun exists(walletId: String): Boolean = walletToPortfolio.containsKey(walletId)
-        override suspend fun belongsToPortfolio(walletId: String, portfolioId: String): Boolean =
+        val walletToPortfolio = mutableMapOf<Long, Long>()
+        override suspend fun exists(walletId: Long): Boolean = walletToPortfolio.containsKey(walletId)
+        override suspend fun belongsToPortfolio(walletId: Long, portfolioId: Long): Boolean =
             walletToPortfolio[walletId] == portfolioId
     }
 
-    private class FakeAssetRepository : AssetRepository {
+    private class FakeCryptoRepository : CryptoRepository {
         val assets = mutableSetOf<String>()
         override suspend fun exists(assetId: String): Boolean = assets.contains(assetId)
     }
 
     private class FakeMovementRepository : MovementRepository {
 
-        private var seq = 0
-        private val store = linkedMapOf<String, Movement>() // id -> Movement
+        private var seq = 0L
+        private val store = linkedMapOf<Long, Movement>() // id -> Movement
         val inserted = mutableListOf<Movement>()            // para aserciones
 
-        override suspend fun insert(movement: Movement): String {
+        override suspend fun insert(movement: Movement): Long {
             seq += 1
-            val id = "mov-$seq"
+            val id = seq
             val saved = movement.copy(id = id)
             store[id] = saved
             inserted += saved
             return id
         }
 
-        override suspend fun findById(movementId: String): Movement? {
+        override suspend fun findById(movementId: Long): Movement? {
             return store[movementId]
         }
 
-        override suspend fun update(movementId: String, update: Movement) {
+        override suspend fun update(movementId: Long, update: Movement) {
             val current = store[movementId] ?: throw IllegalArgumentException("Movement no existe: $movementId")
 
             // update es un “parche” (sin ids/portfolio/wallet/asset). Actualizamos solo campos editables.
@@ -242,7 +243,7 @@ class MoveBetweenWalletsUseCaseTest {
             store[movementId] = patched
         }
 
-        override suspend fun delete(movementId: String) {
+        override suspend fun delete(movementId: Long) {
             store.remove(movementId)
         }
     }
@@ -251,7 +252,7 @@ class MoveBetweenWalletsUseCaseTest {
         private val map = mutableMapOf<String, Holding>() // key = "$walletId|$assetId"
         private var seq = 0
 
-        fun putHolding(id: String, portfolioId: String, walletId: String, assetId: String, qty: Double) {
+        fun putHolding(id: String, portfolioId: Long, walletId: Long, assetId: String, qty: Double) {
             map[key(walletId, assetId)] = Holding(
                 id = id,
                 portfolioId = portfolioId,
@@ -262,12 +263,12 @@ class MoveBetweenWalletsUseCaseTest {
             )
         }
 
-        override suspend fun findByWalletAsset(walletId: String, assetId: String): Holding? =
+        override suspend fun findByWalletAsset(walletId: Long, assetId: String): Holding? =
             map[key(walletId, assetId)]
 
         override suspend fun upsert(
-            portfolioId: String,
-            walletId: String,
+            portfolioId: Long,
+            walletId: Long,
             assetId: String,
             newQuantity: Double,
             updatedAt: Long
@@ -291,6 +292,6 @@ class MoveBetweenWalletsUseCaseTest {
             return h
         }
 
-        private fun key(walletId: String, assetId: String) = "$walletId|$assetId"
+        private fun key(walletId: Long, assetId: String) = "$walletId|$assetId"
     }
 }

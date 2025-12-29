@@ -1,5 +1,12 @@
 package info.eliumontoyasadec.cryptotracker.ui.shell
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -8,7 +15,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapDraft
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapFormSheetContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,7 +32,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioFakeData
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioViewModel
 import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementMode
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsScreen
@@ -31,10 +43,30 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.PortfolioByCryptosScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownScreen
 import kotlinx.coroutines.launch
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
+import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownRow
+import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
+import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
+import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailViewModel
+
+import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
+import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+
+// UI-only filter state (visual feedback only; not wired to ViewModels yet)
+data class FilterUiState(
+    val wallet: String = "Todas",
+    val crypto: String = "Todas"
+) {
+    val hasActive: Boolean get() = wallet != "Todas" || crypto != "Todas"
+    val label: String get() = "Filtros: $wallet · $crypto"
+
+    fun cleared(): FilterUiState = FilterUiState()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +78,15 @@ fun AppShell() {
     var showSearchDialog by remember { mutableStateOf(false) }
     var showFilterDialog by remember { mutableStateOf(false) }
     var showAddMovementDialog by remember { mutableStateOf(false) }
+    var addMovementDraft by remember { mutableStateOf(MovementDraft()) }
     var showRefreshDialog by remember { mutableStateOf(false) }
+
+    var showAddMenu by remember { mutableStateOf(false) }
+    var showAddSwapSheet by remember { mutableStateOf(false) }
+    var addSwapDraft by remember { mutableStateOf(SwapDraft()) }
+
+    // UI-only (fake) active filters for visual feedback in TopAppBar
+    var filters by remember { mutableStateOf(FilterUiState()) }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -61,6 +101,7 @@ fun AppShell() {
     val isDetailScreen = isCryptoDetail || isWalletDetail
     val isListScreen = !isDetailScreen
 
+    val snackbarHostState = remember { SnackbarHostState() }
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -108,6 +149,17 @@ fun AppShell() {
                     },
                     actions = {
                         if (isListScreen) {
+                            if (filters.hasActive) {
+                                Text(
+                                    text = filters.label,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                IconButton(onClick = { filters = filters.cleared() }) {
+                                    Icon(Icons.Filled.Close, contentDescription = "Limpiar filtros")
+                                }
+                            }
+
                             IconButton(onClick = { showSearchDialog = true }) {
                                 Icon(Icons.Filled.Search, contentDescription = "Buscar")
                             }
@@ -115,8 +167,57 @@ fun AppShell() {
                                 Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
                             }
                         } else {
-                            IconButton(onClick = { showAddMovementDialog = true }) {
-                                Icon(Icons.Filled.Add, contentDescription = "Agregar movimiento")
+                            Box {
+                                IconButton(
+                                    onClick = { showAddMenu = true }
+                                ) {
+                                    Icon(Icons.Filled.Add, contentDescription = "Agregar")
+                                }
+
+                                DropdownMenu(
+                                    expanded = showAddMenu,
+                                    onDismissRequest = { showAddMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Movimiento") },
+                                        onClick = {
+                                            val prefilled = when {
+                                                isCryptoDetail -> {
+                                                    val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) } ?: CryptoFilter.BTC
+                                                    MovementDraft(crypto = crypto)
+                                                }
+                                                isWalletDetail -> {
+                                                    val wallet = walletName?.let { nameToWalletFilter(it) } ?: WalletFilter.METAMASK
+                                                    MovementDraft(wallet = wallet)
+                                                }
+                                                else -> MovementDraft()
+                                            }
+                                            addMovementDraft = prefilled
+                                            showAddMovementDialog = true
+                                            showAddMenu = false
+                                        }
+                                    )
+
+                                    DropdownMenuItem(
+                                        text = { Text("Swap") },
+                                        onClick = {
+                                            val prefilledSwap = when {
+                                                isCryptoDetail -> {
+                                                    val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) } ?: CryptoFilter.BTC
+                                                    SwapDraft(fromCrypto = crypto)
+                                                }
+                                                isWalletDetail -> {
+                                                    val wallet = walletName?.let { nameToWalletFilter(it) } ?: WalletFilter.METAMASK
+                                                    SwapDraft(wallet = wallet)
+                                                }
+                                                else -> SwapDraft()
+                                            }
+                                            addSwapDraft = prefilledSwap
+                                            showAddSwapSheet = true
+                                            showAddMenu = false
+                                        }
+                                    )
+                                }
                             }
                             IconButton(onClick = { showRefreshDialog = true }) {
                                 Icon(Icons.Filled.Refresh, contentDescription = "Refrescar")
@@ -124,7 +225,8 @@ fun AppShell() {
                         }
                     }
                 )
-            }
+            },
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
         ) { padding ->
             NavHost(
                 navController = navController,
@@ -132,8 +234,11 @@ fun AppShell() {
                 modifier = Modifier.padding(padding)
             ) {
                 composable(AppDestination.Portfolio.route) {
+                    val vm: PortfolioViewModel = viewModel()
+                    val state = vm.state.collectAsState().value
+
                     PortfolioScreen(
-                        state = PortfolioFakeData.sample,
+                        state = state,
                         onRowClick = { symbol ->
                             navController.navigate("crypto_detail/$symbol") { launchSingleTop = true }
                         }
@@ -143,30 +248,157 @@ fun AppShell() {
                     PortfolioByCryptosScreen()
                 }
                 composable(AppDestination.WalletBreakdown.route) {
-                    val walletRowsFake = listOf(
-                        WalletBreakdownRow("Metamask", 10400.0, 650.0),
-                        WalletBreakdownRow("ByBit", 2100.0, 190.0),
-                        WalletBreakdownRow("Phantom", 0.0, 0.0),
-                    )
+                    val vm: WalletBreakdownViewModel = viewModel()
+                    val state = vm.state.collectAsState().value
 
                     WalletBreakdownScreen(
-                        rows = walletRowsFake,
+                        state = state,
+                        onToggleShowEmpty = vm::toggleShowEmpty,
+                        onChangeSort = vm::changeSort,
                         onWalletClick = { wallet ->
                             navController.navigate("wallet_detail/$wallet") { launchSingleTop = true }
+                        },
+                        onAddMovement = vm::startAddMovement,
+                        onDismissForm = vm::dismissForm,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
                         }
-                    )                }
+                    )
+                }
 
                 composable(AppDestination.InMovements.route) {
-                    MovementsScreen("Movimientos de Entrada", MovementMode.IN)
+                    val vm: MovementsViewModel = viewModel(
+                        key = "movements-in",
+                        factory = MovementsViewModel.Factory(MovementMode.IN)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    MovementsScreen(
+                        title = "Movimientos de Entrada",
+                        state = state,
+                        onSelectWallet = vm::selectWallet,
+                        onSelectCrypto = vm::selectCrypto,
+                        onCreate = vm::startCreate,
+                        onEdit = vm::startEdit,
+                        onRequestDelete = vm::requestDelete,
+                        onCancelDelete = vm::cancelDelete,
+                        onConfirmDelete = {
+                            vm.confirmDelete(it)
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento eliminado") }
+                        },
+                        onDismissForms = vm::dismissForms,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                        },
+                        onSwapDraftChange = vm::changeSwapDraft,
+                        onSwapSave = {
+                            vm.saveSwap()
+                            scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
+                        }
+                    )
                 }
                 composable(AppDestination.OutMovements.route) {
-                    MovementsScreen("Movimientos de Salida", MovementMode.OUT)
+                    val vm: MovementsViewModel = viewModel(
+                        key = "movements-out",
+                        factory = MovementsViewModel.Factory(MovementMode.OUT)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    MovementsScreen(
+                        title = "Movimientos de Salida",
+                        state = state,
+                        onSelectWallet = vm::selectWallet,
+                        onSelectCrypto = vm::selectCrypto,
+                        onCreate = vm::startCreate,
+                        onEdit = vm::startEdit,
+                        onRequestDelete = vm::requestDelete,
+                        onCancelDelete = vm::cancelDelete,
+                        onConfirmDelete = {
+                            vm.confirmDelete(it)
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento eliminado") }
+                        },
+                        onDismissForms = vm::dismissForms,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                        },
+                        onSwapDraftChange = vm::changeSwapDraft,
+                        onSwapSave = {
+                            vm.saveSwap()
+                            scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
+                        }
+                    )
                 }
                 composable(AppDestination.BetweenWallets.route) {
-                    MovementsScreen("Movimientos Entre Carteras", MovementMode.BETWEEN)
+                    val vm: MovementsViewModel = viewModel(
+                        key = "movements-between",
+                        factory = MovementsViewModel.Factory(MovementMode.BETWEEN)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    MovementsScreen(
+                        title = "Movimientos Entre Carteras",
+                        state = state,
+                        onSelectWallet = vm::selectWallet,
+                        onSelectCrypto = vm::selectCrypto,
+                        onCreate = vm::startCreate,
+                        onEdit = vm::startEdit,
+                        onRequestDelete = vm::requestDelete,
+                        onCancelDelete = vm::cancelDelete,
+                        onConfirmDelete = {
+                            vm.confirmDelete(it)
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento eliminado") }
+                        },
+                        onDismissForms = vm::dismissForms,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                        },
+                        onSwapDraftChange = vm::changeSwapDraft,
+                        onSwapSave = {
+                            vm.saveSwap()
+                            scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
+                        }
+                    )
                 }
                 composable(AppDestination.Swaps.route) {
-                    MovementsScreen("Movimientos de Swaps", MovementMode.SWAP)
+                    val vm: MovementsViewModel = viewModel(
+                        key = "movements-swap",
+                        factory = MovementsViewModel.Factory(MovementMode.SWAP)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    MovementsScreen(
+                        title = "Movimientos de Swaps",
+                        state = state,
+                        onSelectWallet = vm::selectWallet,
+                        onSelectCrypto = vm::selectCrypto,
+                        onCreate = vm::startCreate,
+                        onEdit = vm::startEdit,
+                        onRequestDelete = vm::requestDelete,
+                        onCancelDelete = vm::cancelDelete,
+                        onConfirmDelete = {
+                            vm.confirmDelete(it)
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento eliminado") }
+                        },
+                        onDismissForms = vm::dismissForms,
+                        onMovementDraftChange = vm::changeMovementDraft,
+                        onMovementSave = {
+                            vm.saveMovement()
+                            scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                        },
+                        onSwapDraftChange = vm::changeSwapDraft,
+                        onSwapSave = {
+                            vm.saveSwap()
+                            scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
+                        }
+                    )
                 }
 
                 composable(AppDestination.Admin.route) {
@@ -179,17 +411,26 @@ fun AppShell() {
                 composable(
                     route = AppDestination.CryptoDetail.route,
                     arguments = listOf(navArgument("symbol") { type = NavType.StringType })
-                ) { backStackEntry ->
-                    val symbol = backStackEntry.arguments?.getString("symbol").orEmpty()
-                    CryptoDetailScreen(symbol = symbol)
+                ) { entry ->
+                    val symbol = entry.arguments?.getString("symbol").orEmpty()
+                    val vm: CryptoDetailViewModel = viewModel(
+                        factory = CryptoDetailViewModel.Factory(symbol)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    CryptoDetailScreen(state = state)
                 }
                 composable(
                     route = AppDestination.WalletDetail.route,
                     arguments = listOf(navArgument("wallet") { type = NavType.StringType })
                 ) { entry ->
                     val wallet = entry.arguments?.getString("wallet").orEmpty()
-                    WalletDetailScreen(walletName = wallet)
-                }
+                    val vm: WalletDetailViewModel = viewModel(
+                        factory = WalletDetailViewModel.Factory(wallet)
+                    )
+                    val state = vm.state.collectAsState().value
+
+                    WalletDetailScreen(state = state)                }
             }
         }
     }
@@ -206,31 +447,111 @@ fun AppShell() {
     }
 
     if (showFilterDialog) {
-        AlertDialog(
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        var selectedWallet by remember { mutableStateOf(filters.wallet) }
+        var selectedCrypto by remember { mutableStateOf(filters.crypto) }
+
+        ModalBottomSheet(
             onDismissRequest = { showFilterDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showFilterDialog = false }) { Text("Aplicar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showFilterDialog = false }) { Text("Cancelar") }
-            },
-            title = { Text("Filtros") },
-            text = { Text("Filtros (fake). Próximo paso: chips por Wallet/Crypto/Tipo/Fechas.") }
-        )
+            sheetState = sheetState
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Filtros", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "(fake) Próximo paso: conectar esto al estado del ViewModel.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Divider()
+
+                Text("Cartera", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Todas", "Metamask", "ByBit", "Phantom").forEach { label ->
+                        FilterChip(
+                            selected = selectedWallet == label,
+                            onClick = { selectedWallet = label },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                Text("Crypto", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Todas", "BTC", "ETH", "SOL", "ALGO", "AIXBT").forEach { label ->
+                        FilterChip(
+                            selected = selectedCrypto == label,
+                            onClick = { selectedCrypto = label },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+
+                Text("Rango de fechas", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    "Desde: (pendiente)   Hasta: (pendiente)",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { showFilterDialog = false }) { Text("Cancelar") }
+                    TextButton(onClick = {
+                        filters = FilterUiState(wallet = selectedWallet, crypto = selectedCrypto)
+                        showFilterDialog = false
+                    }) { Text("Aplicar") }
+                }
+
+                Spacer(Modifier.height(12.dp))
+            }
+        }
     }
 
     if (showAddMovementDialog) {
-        AlertDialog(
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
             onDismissRequest = { showAddMovementDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showAddMovementDialog = false }) { Text("Guardar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddMovementDialog = false }) { Text("Cancelar") }
-            },
-            title = { Text("Agregar movimiento") },
-            text = { Text("Formulario (fake). Próximo paso: ModalBottomSheet con tipo/cantidad/precio/wallet.") }
-        )
+            sheetState = sheetState
+        ) {
+            MovementFormSheetContent(
+                mode = MovementFormMode.CREATE,
+                draft = addMovementDraft,
+                onChange = { addMovementDraft = it },
+                onCancel = { showAddMovementDialog = false },
+                onSave = {
+                    // UI-only: close the sheet. (Later: call use case / repo)
+                    showAddMovementDialog = false
+                    scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
+                }
+            )
+        }
+    }
+
+    if (showAddSwapSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showAddSwapSheet = false },
+            sheetState = sheetState
+        ) {
+            SwapFormSheetContent(
+                draft = addSwapDraft,
+                onChange = { addSwapDraft = it },
+                onCancel = { showAddSwapSheet = false },
+                onSave = {
+                    // UI-only: close the sheet. (Later: call use case / repo)
+                    showAddSwapSheet = false
+                    scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
+                }
+            )
+        }
     }
 
     if (showRefreshDialog) {
@@ -308,4 +629,22 @@ private fun routeToTitle(route: String?): String = when (route) {
     AppDestination.Swaps.route -> "Swaps"
     AppDestination.Admin.route -> "Administración"
     else -> "CryptoTracker"
+}
+
+private fun symbolToCryptoFilter(symbol: String): CryptoFilter {
+    return try {
+        CryptoFilter.valueOf(symbol.trim().uppercase())
+    } catch (_: Throwable) {
+        CryptoFilter.BTC
+    }
+}
+
+private fun nameToWalletFilter(name: String): WalletFilter {
+    val n = name.trim().lowercase()
+    return when {
+        n.contains("meta") -> WalletFilter.METAMASK
+        n.contains("bybit") -> WalletFilter.BYBIT
+        n.contains("phantom") -> WalletFilter.PHANTOM
+        else -> WalletFilter.METAMASK
+    }
 }

@@ -1,7 +1,7 @@
 package info.eliumontoyasadec.cryptotracker.domain.interactor.movement
 import info.eliumontoyasadec.cryptotracker.domain.model.Movement
 import info.eliumontoyasadec.cryptotracker.domain.model.MovementError
-import info.eliumontoyasadec.cryptotracker.domain.repositories.AssetRepository
+import info.eliumontoyasadec.cryptotracker.domain.repositories.CryptoRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.HoldingRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.MovementRepository
  import info.eliumontoyasadec.cryptotracker.domain.repositories.PortfolioRepository
@@ -12,7 +12,7 @@ import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 class RegisterMovementUseCase(
     private val portfolioRepo: PortfolioRepository,
     private val walletRepo: WalletRepository,
-    private val assetRepo: AssetRepository,
+    private val assetRepo: CryptoRepository,
     private val movementRepo: MovementRepository,
     private val holdingRepo: HoldingRepository,
     private val tx: TransactionRunner
@@ -20,8 +20,8 @@ class RegisterMovementUseCase(
 
     suspend fun execute(cmd: RegisterMovementCommand): RegisterMovementResult = tx.runInTransaction {
         // 1) Validación de entrada
-        if (cmd.portfolioId.isBlank()) throw MovementError.InvalidInput("portfolioId es requerido")
-        if (cmd.walletId.isBlank()) throw MovementError.InvalidInput("walletId es requerido")
+        if (cmd.portfolioId == 0L) throw MovementError.InvalidInput("portfolioId es requerido")
+        if (cmd.walletId == 0L) throw MovementError.InvalidInput("walletId es requerido")
         if (cmd.assetId.isBlank()) throw MovementError.InvalidInput("assetId es requerido")
         if (cmd.quantity <= 0.0) throw MovementError.InvalidInput("quantity debe ser > 0")
         if (cmd.timestamp <= 0L) throw MovementError.InvalidInput("timestamp inválido")

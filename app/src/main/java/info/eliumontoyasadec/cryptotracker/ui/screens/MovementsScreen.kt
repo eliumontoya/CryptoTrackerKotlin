@@ -1,5 +1,7 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package info.eliumontoyasadec.cryptotracker.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,29 +13,57 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.text.input.ImeAction
+ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementTypeUi
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapDraft
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapFormSheetContent
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+// -------- Domain-ish UI models (still fake) --------
 
 enum class MovementMode { IN, OUT, BETWEEN, SWAP }
 
-private enum class WalletFilter(val label: String) {
+enum class WalletFilter(val label: String) {
     ALL("Todas"),
     METAMASK("Metamask"),
     BYBIT("ByBit"),
     PHANTOM("Phantom")
 }
 
-private enum class CryptoFilter(val label: String) {
+enum class CryptoFilter(val label: String) {
     ALL("Todas"),
     BTC("BTC"),
     ETH("ETH"),
@@ -42,7 +72,7 @@ private enum class CryptoFilter(val label: String) {
     AIXBT("AIXBT")
 }
 
-private data class MovementRow(
+data class MovementRow(
     val id: String,
     val dateLabel: String,
     val wallet: WalletFilter,
@@ -51,24 +81,69 @@ private data class MovementRow(
     val details: String
 )
 
+// -------- UI State --------
+
+data class MovementsUiState(
+    val selectedWallet: WalletFilter = WalletFilter.ALL,
+    val selectedCrypto: CryptoFilter = CryptoFilter.ALL,
+    val rows: List<MovementRow> = emptyList(),
+    val filteredRows: List<MovementRow> = emptyList(),
+    val movementForm: MovementFormState? = null,
+    val swapForm: SwapFormState? = null,
+    val pendingDeleteId: String? = null
+)
+
+data class MovementFormState(
+    val mode: MovementFormMode,
+    val draft: MovementDraft
+)
+
+data class SwapFormState(
+    val draft: SwapDraft
+)
+
+// -------- Composable --------
+
 @Composable
-fun MovementsScreen(title: String, mode: MovementMode) {
-    // UI-only filter state
-    var walletFilter by remember { mutableStateOf(WalletFilter.ALL) }
-    var cryptoFilter by remember { mutableStateOf(CryptoFilter.ALL) }
-
-    val allRows = remember(mode) { fakeRowsFor(mode) }
-    val filteredRows = allRows.filter { row ->
-        (walletFilter == WalletFilter.ALL || row.wallet == walletFilter) &&
-            (cryptoFilter == CryptoFilter.ALL || row.crypto == cryptoFilter)
-    }
-
+fun MovementsScreen(
+    title: String,
+    state: MovementsUiState,
+    onSelectWallet: (WalletFilter) -> Unit,
+    onSelectCrypto: (CryptoFilter) -> Unit,
+    onCreate: () -> Unit,
+    onEdit: (MovementRow) -> Unit,
+    onRequestDelete: (MovementRow) -> Unit,
+    onCancelDelete: () -> Unit,
+    onConfirmDelete: (String) -> Unit,
+    onDismissForms: () -> Unit,
+    onMovementDraftChange: (MovementDraft) -> Unit,
+    onMovementSave: () -> Unit,
+    onSwapDraftChange: (SwapDraft) -> Unit,
+    onSwapSave: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        var searchQuery by remember { mutableStateOf("") }
+        val q = searchQuery.trim().lowercase()
+        val shownRows = if (q.isBlank()) {
+            state.filteredRows
+        } else {
+            state.filteredRows.filter { row ->
+                row.headline.lowercase().contains(q) ||
+                    row.details.lowercase().contains(q) ||
+                    row.crypto.label.lowercase().contains(q) ||
+                    row.wallet.label.lowercase().contains(q)
+            }
+        }
+        val hasActiveFilters =
+            (state.selectedWallet != WalletFilter.ALL) ||
+            (state.selectedCrypto != CryptoFilter.ALL) ||
+            (searchQuery.isNotBlank())
+
         Text(title, style = MaterialTheme.typography.headlineSmall)
 
         // Filters
@@ -83,9 +158,9 @@ fun MovementsScreen(title: String, mode: MovementMode) {
                 Text("Cartera", style = MaterialTheme.typography.labelLarge)
                 ChipRow(
                     options = WalletFilter.entries,
-                    selected = walletFilter,
+                    selected = state.selectedWallet,
                     labelOf = { it.label },
-                    onSelect = { walletFilter = it }
+                    onSelect = onSelectWallet
                 )
 
                 Spacer(Modifier.height(6.dp))
@@ -93,9 +168,9 @@ fun MovementsScreen(title: String, mode: MovementMode) {
                 Text("Crypto", style = MaterialTheme.typography.labelLarge)
                 ChipRow(
                     options = CryptoFilter.entries,
-                    selected = cryptoFilter,
+                    selected = state.selectedCrypto,
                     labelOf = { it.label },
-                    onSelect = { cryptoFilter = it }
+                    onSelect = onSelectCrypto
                 )
             }
         }
@@ -111,11 +186,52 @@ fun MovementsScreen(title: String, mode: MovementMode) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Movimientos", style = MaterialTheme.typography.titleMedium)
-                    Text("${filteredRows.size}", style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("${shownRows.size}", style = MaterialTheme.typography.labelLarge)
+                        OutlinedButton(onClick = onCreate) { Text("Nuevo") }
+                    }
                 }
                 Divider()
 
-                if (filteredRows.isEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val parts = buildList {
+                        if (state.selectedWallet != WalletFilter.ALL) add(state.selectedWallet.label)
+                        if (state.selectedCrypto != CryptoFilter.ALL) add(state.selectedCrypto.label)
+                        if (searchQuery.isNotBlank()) add("Buscar: ${searchQuery}")
+                    }
+
+                    Text(
+                        text = if (parts.isEmpty()) "Filtros activos: Ninguno" else "Filtros activos: ${parts.joinToString(" · ")}",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    if (hasActiveFilters) {
+                        TextButton(
+                            onClick = {
+                                searchQuery = ""
+                                onSelectWallet(WalletFilter.ALL)
+                                onSelectCrypto(CryptoFilter.ALL)
+                            }
+                        ) {
+                            Text("Limpiar")
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Buscar") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                )
+
+                if (shownRows.isEmpty()) {
                     Text(
                         text = "No hay movimientos con los filtros actuales.",
                         style = MaterialTheme.typography.bodyMedium
@@ -125,12 +241,64 @@ fun MovementsScreen(title: String, mode: MovementMode) {
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(filteredRows, key = { it.id }) { row ->
-                            MovementRowItem(row)
+                        items(shownRows, key = { it.id }) { row ->
+                            MovementRowItem(
+                                row = row,
+                                onClick = { onEdit(row) },
+                                onEdit = { onEdit(row) },
+                                onDelete = { onRequestDelete(row) }
+                            )
                             Divider()
                         }
                     }
                 }
+            }
+        }
+
+        // Delete confirmation
+        if (state.pendingDeleteId != null) {
+            AlertDialog(
+                onDismissRequest = onCancelDelete,
+                confirmButton = {
+                    TextButton(onClick = { onConfirmDelete(state.pendingDeleteId) }) { Text("Eliminar") }
+                },
+                dismissButton = {
+                    TextButton(onClick = onCancelDelete) { Text("Cancelar") }
+                },
+                title = { Text("Eliminar movimiento") },
+                text = { Text("Esta acción no se puede deshacer (fake).") }
+            )
+        }
+
+        // Bottom sheets
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+        if (state.movementForm != null) {
+            ModalBottomSheet(
+                onDismissRequest = onDismissForms,
+                sheetState = sheetState
+            ) {
+                MovementFormSheetContent(
+                    mode = state.movementForm.mode,
+                    draft = state.movementForm.draft,
+                    onChange = onMovementDraftChange,
+                    onCancel = onDismissForms,
+                    onSave = onMovementSave
+                )
+            }
+        }
+
+        if (state.swapForm != null) {
+            ModalBottomSheet(
+                onDismissRequest = onDismissForms,
+                sheetState = sheetState
+            ) {
+                SwapFormSheetContent(
+                    draft = state.swapForm.draft,
+                    onChange = onSwapDraftChange,
+                    onCancel = onDismissForms,
+                    onSave = onSwapSave
+                )
             }
         }
     }
@@ -155,15 +323,56 @@ private fun <T> ChipRow(
 }
 
 @Composable
-private fun MovementRowItem(row: MovementRow) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun MovementRowItem(
+    row: MovementRow,
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(row.headline, style = MaterialTheme.typography.titleSmall)
-            Text(row.dateLabel, style = MaterialTheme.typography.labelMedium)
+            Column(Modifier.weight(1f)) {
+                Text(row.headline, style = MaterialTheme.typography.titleSmall)
+                Text(row.dateLabel, style = MaterialTheme.typography.labelMedium)
+            }
+            Box {
+                var expanded by remember { mutableStateOf(false) }
+
+                IconButton(onClick = { expanded = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "Más")
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Editar") },
+                        onClick = {
+                            expanded = false
+                            onEdit()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Eliminar") },
+                        onClick = {
+                            expanded = false
+                            onDelete()
+                        }
+                    )
+                }
+            }
         }
+
         Text(
             text = "${row.wallet.label} · ${row.crypto.label}",
             style = MaterialTheme.typography.bodySmall
@@ -171,6 +380,204 @@ private fun MovementRowItem(row: MovementRow) {
         Text(row.details, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+// -------- ViewModel (fake data) --------
+
+class MovementsViewModel(private val mode: MovementMode) : ViewModel() {
+
+    private var allRows: List<MovementRow> = fakeRowsFor(mode)
+
+    private val _state = MutableStateFlow(
+        MovementsUiState(
+            selectedWallet = WalletFilter.ALL,
+            selectedCrypto = CryptoFilter.ALL,
+            rows = allRows,
+            filteredRows = allRows
+        )
+    )
+    val state: StateFlow<MovementsUiState> = _state.asStateFlow()
+
+    fun selectWallet(wallet: WalletFilter) {
+        val next = _state.value.copy(selectedWallet = wallet)
+        _state.value = next.copy(filteredRows = applyFilters(next))
+    }
+
+    fun selectCrypto(crypto: CryptoFilter) {
+        val next = _state.value.copy(selectedCrypto = crypto)
+        _state.value = next.copy(filteredRows = applyFilters(next))
+    }
+
+    fun startCreate() {
+        val st = _state.value
+        if (mode == MovementMode.SWAP) {
+            _state.value = st.copy(
+                swapForm = SwapFormState(SwapDraft()),
+                movementForm = null
+            )
+        } else {
+            _state.value = st.copy(
+                movementForm = MovementFormState(
+                    mode = MovementFormMode.CREATE,
+                    draft = MovementDraft(type = defaultTypeForMode(mode))
+                ),
+                swapForm = null
+            )
+        }
+    }
+
+    fun startEdit(row: MovementRow) {
+        val st = _state.value
+        _state.value = st.copy(
+            movementForm = MovementFormState(
+                mode = MovementFormMode.EDIT,
+                draft = row.toDraft()
+            ),
+            swapForm = null
+        )
+    }
+
+    fun dismissForms() {
+        val st = _state.value
+        _state.value = st.copy(movementForm = null, swapForm = null)
+    }
+
+    fun changeMovementDraft(draft: MovementDraft) {
+        val st = _state.value
+        val form = st.movementForm ?: return
+        _state.value = st.copy(movementForm = form.copy(draft = draft))
+    }
+
+    fun saveMovement() {
+        val st = _state.value
+        val form = st.movementForm ?: return
+        val draft = form.draft
+
+        val nowId = draft.id ?: "${mode.name.lowercase()}-${System.currentTimeMillis()}"
+        val row = draft.toRow(id = nowId, mode = mode)
+
+        allRows = if (form.mode == MovementFormMode.CREATE) {
+            listOf(row) + allRows
+        } else {
+            allRows.map { if (it.id == nowId) row else it }
+        }
+
+        val next = st.copy(rows = allRows, movementForm = null)
+        _state.value = next.copy(filteredRows = applyFilters(next))
+    }
+
+    fun changeSwapDraft(draft: SwapDraft) {
+        val st = _state.value
+        val form = st.swapForm ?: return
+        _state.value = st.copy(swapForm = form.copy(draft = draft))
+    }
+
+    fun saveSwap() {
+        val st = _state.value
+        val form = st.swapForm ?: return
+        val draft = form.draft
+
+        val id = draft.id ?: "swap-${System.currentTimeMillis()}"
+        val headline = "Swap en ${draft.wallet.label}"
+        val details =
+            "+ ${draft.toQtyText.ifBlank { "?" }} ${draft.toCrypto.label} · - ${draft.fromQtyText.ifBlank { "?" }} ${draft.fromCrypto.label} (fake)"
+
+        val row = MovementRow(
+            id = id,
+            dateLabel = draft.dateLabel,
+            wallet = draft.wallet,
+            crypto = draft.toCrypto,
+            headline = headline,
+            details = details
+        )
+
+        allRows = listOf(row) + allRows
+        val next = st.copy(rows = allRows, swapForm = null)
+        _state.value = next.copy(filteredRows = applyFilters(next))
+    }
+
+    fun requestDelete(row: MovementRow) {
+        _state.value = _state.value.copy(pendingDeleteId = row.id)
+    }
+
+    fun cancelDelete() {
+        _state.value = _state.value.copy(pendingDeleteId = null)
+    }
+
+    fun confirmDelete(id: String) {
+        allRows = allRows.filterNot { it.id == id }
+        val st = _state.value.copy(rows = allRows, pendingDeleteId = null)
+        _state.value = st.copy(filteredRows = applyFilters(st))
+    }
+
+    private fun applyFilters(state: MovementsUiState): List<MovementRow> {
+        return state.rows.filter { row ->
+            (state.selectedWallet == WalletFilter.ALL || row.wallet == state.selectedWallet) &&
+                    (state.selectedCrypto == CryptoFilter.ALL || row.crypto == state.selectedCrypto)
+        }
+    }
+
+    private fun defaultTypeForMode(mode: MovementMode): MovementTypeUi {
+        return when (mode) {
+            MovementMode.IN -> MovementTypeUi.DEPOSIT
+            MovementMode.OUT -> MovementTypeUi.WITHDRAW
+            MovementMode.BETWEEN -> MovementTypeUi.TRANSFER_OUT
+            MovementMode.SWAP -> MovementTypeUi.BUY
+        }
+    }
+
+    private fun MovementRow.toDraft(): MovementDraft {
+        val qty = headline.split(" ").getOrNull(1).orEmpty()
+        return MovementDraft(
+            id = id,
+            wallet = wallet,
+            crypto = crypto,
+            type = MovementTypeUi.BUY,
+            quantityText = qty,
+            priceText = "",
+            feeQuantityText = "",
+            dateLabel = dateLabel,
+            notes = details
+        )
+    }
+
+    private fun MovementDraft.toRow(id: String, mode: MovementMode): MovementRow {
+        val qty = quantityText.ifBlank { "?" }
+        val head = when (mode) {
+            MovementMode.IN -> "+ $qty ${crypto.label}"
+            MovementMode.OUT -> "- $qty ${crypto.label}"
+            MovementMode.BETWEEN -> "${wallet.label} → (otra)"
+            MovementMode.SWAP -> "Movimiento"
+        }
+        val det = buildString {
+            append(type.label)
+            append(" · ")
+            append("qty=$qty")
+            if (priceText.isNotBlank()) append(" · price=$priceText")
+            if (feeQuantityText.isNotBlank()) append(" · fee=$feeQuantityText")
+            if (notes.isNotBlank()) append(" · ").append(notes)
+        }
+        return MovementRow(
+            id = id,
+            dateLabel = dateLabel,
+            wallet = wallet,
+            crypto = crypto,
+            headline = head,
+            details = det
+        )
+    }
+
+    class Factory(private val mode: MovementMode) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(MovementsViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return MovementsViewModel(mode) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+}
+
+// -------- Fake data --------
 
 private fun fakeRowsFor(mode: MovementMode): List<MovementRow> {
     return when (mode) {

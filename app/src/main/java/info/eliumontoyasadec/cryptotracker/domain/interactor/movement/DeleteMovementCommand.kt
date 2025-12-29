@@ -1,4 +1,4 @@
 package info.eliumontoyasadec.cryptotracker.domain.interactor.movement
 data class DeleteMovementCommand(
-    val movementId: String
+    val movementId: Long
 )

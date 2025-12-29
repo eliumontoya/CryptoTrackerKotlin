@@ -13,8 +13,6 @@ import org.junit.Assert.*
 import org.junit.Test
 import kotlin.test.assertFailsWith
 import info.eliumontoyasadec.cryptotracker.domain.repositories.*
-import java.util.UUID
-
 
 
 class SwapMovementUseCaseTest {
@@ -23,22 +21,22 @@ class SwapMovementUseCaseTest {
     fun `swap exitoso crea 2 movimientos con mismo groupId y actualiza holdings de ambos assets`() = runTest {
         val movementRepo = FakeMovementRepoForSwap()
         val holdingRepo = FakeHoldingRepoMulti().apply {
-            seed(Holding(id = "hol-btc", portfolioId = "p1", walletId = "w1", assetId = "btc", quantity = 1.0, updatedAt = 1L))
-            seed(Holding(id = "hol-eth", portfolioId = "p1", walletId = "w1", assetId = "eth", quantity = 2.0, updatedAt = 1L))
+            seed(Holding(id = "hol-btc", portfolioId = 1L, walletId = 1L, assetId = "btc", quantity = 1.0, updatedAt = 1L))
+            seed(Holding(id = "hol-eth", portfolioId = 1L, walletId = 1L, assetId = "eth", quantity = 2.0, updatedAt = 1L))
         }
 
         val uc = SwapMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()
         )
 
         val cmd = SwapMovementCommand(
-            portfolioId = "p1",
-            walletId = "w1",
+            portfolioId = 1L,
+            walletId = 1L,
             fromAssetId = "btc",
             toAssetId = "eth",
             fromQuantity = 0.4,
@@ -59,21 +57,21 @@ class SwapMovementUseCaseTest {
         assertEquals(sell.groupId, buy.groupId)
         assertEquals(result.groupId, sell.groupId)
 
-        assertEquals("p1", sell.portfolioId)
-        assertEquals("w1", sell.walletId)
+        assertEquals(1L, sell.portfolioId)
+        assertEquals(1L,sell.walletId)
         assertEquals("btc", sell.assetId)
         assertEquals(0.4, sell.quantity, 0.0000001)
 
-        assertEquals("p1", buy.portfolioId)
-        assertEquals("w1", buy.walletId)
+        assertEquals(1L, buy.portfolioId)
+        assertEquals(1L, buy.walletId)
         assertEquals("eth", buy.assetId)
         assertEquals(1.5, buy.quantity, 0.0000001)
 
         // --- Holdings ---
         // BTC: 1.0 - 0.4 = 0.6
         // ETH: 2.0 + 1.5 = 3.5
-        val btc = holdingRepo.findByWalletAsset("w1", "btc")!!
-        val eth = holdingRepo.findByWalletAsset("w1", "eth")!!
+        val btc = holdingRepo.findByWalletAsset(1L, "btc")!!
+        val eth = holdingRepo.findByWalletAsset(1L, "eth")!!
 
         assertEquals(0.6, btc.quantity, 0.0000001)
         assertEquals(3.5, eth.quantity, 0.0000001)
@@ -89,22 +87,22 @@ class SwapMovementUseCaseTest {
     fun `swap exitoso cuando holding destino no existe lo crea desde 0`() = runTest {
         val movementRepo = FakeMovementRepoForSwap()
         val holdingRepo = FakeHoldingRepoMulti().apply {
-            seed(Holding(id = "hol-btc", portfolioId = "p1", walletId = "w1", assetId = "btc", quantity = 1.0, updatedAt = 1L))
+            seed(Holding(id = "hol-btc", portfolioId = 1L,walletId = 1L,assetId = "btc", quantity = 1.0, updatedAt = 1L))
             // ETH NO existe
         }
 
         val uc = SwapMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()
         )
 
         val cmd = SwapMovementCommand(
-            portfolioId = "p1",
-            walletId = "w1",
+            portfolioId = 1L,
+            walletId = 1L,
             fromAssetId = "btc",
             toAssetId = "eth",
             fromQuantity = 0.25,
@@ -114,8 +112,8 @@ class SwapMovementUseCaseTest {
 
         val result = uc.execute(cmd)
 
-        val btc = holdingRepo.findByWalletAsset("w1", "btc")!!
-        val eth = holdingRepo.findByWalletAsset("w1", "eth")!!
+        val btc = holdingRepo.findByWalletAsset(1L, "btc")!!
+        val eth = holdingRepo.findByWalletAsset(1L, "eth")!!
 
         assertEquals(0.75, btc.quantity, 0.0000001)
         assertEquals(10.0, eth.quantity, 0.0000001)
@@ -128,21 +126,21 @@ class SwapMovementUseCaseTest {
     fun `swap falla si holdings origen insuficientes y no inserta movimientos ni upserta holdings`() = runTest {
         val movementRepo = FakeMovementRepoForSwap()
         val holdingRepo = FakeHoldingRepoMulti().apply {
-            seed(Holding(id = "hol-btc", portfolioId = "p1", walletId = "w1", assetId = "btc", quantity = 0.1, updatedAt = 1L))
+            seed(Holding(id = "hol-btc", portfolioId = 1L,walletId = 1L, assetId = "btc", quantity = 0.1, updatedAt = 1L))
         }
 
         val uc = SwapMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()
         )
 
         val cmd = SwapMovementCommand(
-            portfolioId = "p1",
-            walletId = "w1",
+            portfolioId = 1L,
+            walletId = 1L,
             fromAssetId = "btc",
             toAssetId = "eth",
             fromQuantity = 0.2, // > 0.1
@@ -158,7 +156,7 @@ class SwapMovementUseCaseTest {
         assertEquals(0, holdingRepo.upsertCalls)
 
         // holding se mantiene igual
-        assertEquals(0.1, holdingRepo.findByWalletAsset("w1", "btc")!!.quantity, 0.0)
+        assertEquals(0.1, holdingRepo.findByWalletAsset(1L, "btc")!!.quantity, 0.0)
     }
 
     @Test
@@ -169,15 +167,15 @@ class SwapMovementUseCaseTest {
         val uc = SwapMovementUseCase(
             portfolioRepo = FakePortfolioRepo(exists = true),
             walletRepo = FakeWalletRepo(exists = true, belongs = true),
-            assetRepo = FakeAssetRepo(exists = true),
+            assetRepo = FakeCryptoRepo(exists = true),
             movementRepo = movementRepo,
             holdingRepo = holdingRepo,
             tx = FakeTx()
         )
 
         val cmd = SwapMovementCommand(
-            portfolioId = "p1",
-            walletId = "w1",
+            portfolioId = 1L,
+            walletId = 1L,
             fromAssetId = "btc",
             toAssetId = "btc",
             fromQuantity = 0.1,
@@ -200,16 +198,16 @@ class SwapMovementUseCaseTest {
     private class FakeMovementRepoForSwap : MovementRepository {
         val inserted = mutableListOf<Movement>()
 
-        override suspend fun insert(movement: Movement): String {
-            val id = UUID.randomUUID().toString()
+        override suspend fun insert(movement: Movement): Long {
+            val id =   System.currentTimeMillis()
             val persisted = movement.copy(id = id)
             inserted += persisted
             return id
         }
 
-        override suspend fun findById(movementId: String): Movement? = null
-        override suspend fun update(movementId: String, update: Movement) = Unit
-        override suspend fun delete(movementId: String) = Unit
+        override suspend fun findById(movementId: Long): Movement? = null
+        override suspend fun update(movementId: Long, update: Movement) = Unit
+        override suspend fun delete(movementId: Long) = Unit
     }
 
     private class FakeHoldingRepoMulti : HoldingRepository {
@@ -221,13 +219,13 @@ class SwapMovementUseCaseTest {
             store[key(h.walletId, h.assetId)] = h
         }
 
-        override suspend fun findByWalletAsset(walletId: String, assetId: String): Holding? {
+        override suspend fun findByWalletAsset(walletId: Long, assetId: String): Holding? {
             return store[key(walletId, assetId)]
         }
 
         override suspend fun upsert(
-            portfolioId: String,
-            walletId: String,
+            portfolioId: Long,
+            walletId: Long,
             assetId: String,
             newQuantity: Double,
             updatedAt: Long
@@ -250,6 +248,6 @@ class SwapMovementUseCaseTest {
             return newHolding
         }
 
-        private fun key(walletId: String, assetId: String) = "$walletId|$assetId"
+        private fun key(walletId: Long, assetId: String) = "$walletId|$assetId"
     }
 }

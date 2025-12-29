@@ -15,7 +15,7 @@ class DeleteMovementUseCase(
 ) {
 
     suspend fun execute(cmd: DeleteMovementCommand): DeleteMovementResult = tx.runInTransaction {
-        if (cmd.movementId.isBlank()) throw MovementError.InvalidInput("movementId es requerido")
+        if (cmd.movementId == 0L) throw MovementError.InvalidInput("movementId es requerido")
 
         val old = movementRepo.findById(cmd.movementId)
             ?: throw MovementError.NotFound("Movimiento no existe")

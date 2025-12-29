@@ -4,20 +4,19 @@ import info.eliumontoyasadec.cryptotracker.domain.model.Movement
 import info.eliumontoyasadec.cryptotracker.domain.model.MovementError
 import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 import info.eliumontoyasadec.cryptotracker.domain.repositories.*
-import java.util.UUID
 
 class SwapMovementUseCase(
     private val portfolioRepo: PortfolioRepository,
     private val walletRepo: WalletRepository,
-    private val assetRepo: AssetRepository,
+    private val assetRepo: CryptoRepository,
     private val movementRepo: MovementRepository,
     private val holdingRepo: HoldingRepository,
     private val tx: TransactionRunner
 ) {
     suspend fun execute(cmd: SwapMovementCommand): SwapMovementResult = tx.runInTransaction {
         // 1) Validación de entrada
-        if (cmd.portfolioId.isBlank()) throw MovementError.InvalidInput("portfolioId es requerido")
-        if (cmd.walletId.isBlank()) throw MovementError.InvalidInput("walletId es requerido")
+        if (cmd.portfolioId == 0L) throw MovementError.InvalidInput("portfolioId es requerido")
+        if (cmd.walletId == 0L) throw MovementError.InvalidInput("walletId es requerido")
         if (cmd.fromAssetId.isBlank()) throw MovementError.InvalidInput("fromAssetId es requerido")
         if (cmd.toAssetId.isBlank()) throw MovementError.InvalidInput("toAssetId es requerido")
         if (cmd.fromAssetId == cmd.toAssetId) throw MovementError.InvalidInput("fromAssetId y toAssetId deben ser distintos")
@@ -50,7 +49,9 @@ class SwapMovementUseCase(
         val newToQty = currentToQty + cmd.toQuantity
 
         // 5) Persistencia atómica: 2 movimientos + 2 upserts
-        val groupId = UUID.randomUUID().toString()
+        //  Todo: cambiar eesto a que la bd sea el que haga el groupid
+        //val groupId = UUID.randomUUID().toString()
+        val groupId = System.currentTimeMillis()
 
         val sellMovementId = movementRepo.insert(
             Movement(

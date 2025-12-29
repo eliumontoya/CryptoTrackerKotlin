@@ -15,7 +15,7 @@ class EditMovementUseCase(
 
     suspend fun execute(cmd: EditMovementCommand): EditMovementResult = tx.runInTransaction {
         // 1) Validación básica
-        if (cmd.movementId.isBlank()) throw MovementError.InvalidInput("movementId es requerido")
+        if (cmd.movementId == 0L) throw MovementError.InvalidInput("movementId es requerido")
         if (cmd.newQuantity <= 0.0) throw MovementError.InvalidInput("quantity debe ser > 0")
         if (cmd.newTimestamp <= 0L) throw MovementError.InvalidInput("timestamp inválido")
 

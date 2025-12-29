@@ -23,16 +23,16 @@ class EditMovementUseCaseTest {
         val movementRepo = FakeMovementRepo().apply {
             seed(
                 Movement(
-                    id = "mov-1",
-                    portfolioId = "p1",
-                    walletId = "w1",
+                    id = 1L,
+                    portfolioId = 1L,
+                    walletId = 1L,
                     assetId = "btc",
                     type = MovementType.BUY,
                     quantity = 1.0,
                     price = 40000.0,
                     feeQuantity = 0.0,
                     timestamp = 1700000000000L,
-                    notes = null
+                    notes = ""
                 )
             )
         }
@@ -40,8 +40,8 @@ class EditMovementUseCaseTest {
         val holdingRepo = FakeHoldingRepo().apply {
             holding = Holding(
                 id = "hol-1",
-                portfolioId = "p1",
-                walletId = "w1",
+                portfolioId = 1L,
+                walletId = 1L,
                 assetId = "btc",
                 quantity = 1.0,
                 updatedAt = 1L
@@ -56,7 +56,7 @@ class EditMovementUseCaseTest {
 
         val result = uc.execute(
             EditMovementCommand(
-                movementId = "mov-1",
+                movementId = 1L,
                 newType = MovementType.BUY,
                 newQuantity = 2.0,
                 newPrice = 41000.0,
@@ -66,13 +66,13 @@ class EditMovementUseCaseTest {
             )
         )
 
-        assertEquals("mov-1", result.movementId)
+        assertEquals(1L, result.movementId)
         assertEquals("hol-1", result.holdingId)
         assertEquals(2.0, result.newHoldingQuantity, 0.0000001)
 
         // Verifica que se actualizó el movimiento
-        assertEquals("mov-1", movementRepo.lastUpdateId)
-         val updated = movementRepo.findById("mov-1")!!
+        assertEquals(1L, movementRepo.lastUpdateId)
+         val updated = movementRepo.findById(1L)!!
         assertEquals(2.0, updated.quantity, 0.0)
 
 
@@ -85,16 +85,15 @@ class EditMovementUseCaseTest {
         val movementRepo = FakeMovementRepo().apply {
             seed(
                 Movement(
-                    id = "mov-2",
-                    portfolioId = "p1",
-                    walletId = "w1",
+                    id = 2L,
+                    portfolioId = 1L,
+                    walletId = 1L,
                     assetId = "btc",
                     type = MovementType.SELL,
                     quantity = 0.1,
                     price = 45000.0,
                     feeQuantity = 0.0,
                     timestamp = 1700000000000L,
-                    notes = null
                 )
             )
         }
@@ -102,8 +101,8 @@ class EditMovementUseCaseTest {
         val holdingRepo = FakeHoldingRepo().apply {
             holding = Holding(
                 id = "hol-2",
-                portfolioId = "p1",
-                walletId = "w1",
+                portfolioId = 1L,
+                walletId = 1L,
                 assetId = "btc",
                 quantity = 0.2,
                 updatedAt = 1L
@@ -115,7 +114,7 @@ class EditMovementUseCaseTest {
 
         assertFailsWith<MovementError.InsufficientHoldings> {
             uc.execute( EditMovementCommand(
-                movementId = "mov-2",
+                movementId = 2L,
                 newType = MovementType.SELL,
                 newQuantity = 0.5,
                 newPrice = 46000.0,

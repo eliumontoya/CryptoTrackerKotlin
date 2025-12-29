@@ -8,7 +8,7 @@ import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 import java.time.Instant
 
 @Entity(
-    tableName = "transactions",
+    tableName = "movements",
     foreignKeys = [
         ForeignKey(
             entity = WalletEntity::class,
@@ -19,31 +19,30 @@ import java.time.Instant
         ForeignKey(
             entity = CryptoEntity::class,
             parentColumns = ["symbol"],
-            childColumns = ["cryptoSymbol"],
+            childColumns = ["assetId"],
             onDelete = ForeignKey.NO_ACTION
         )
     ],
     indices = [
         Index("walletId"),
-        Index("cryptoSymbol")
+        Index("assetId")
     ]
 )
-data class TransactionEntity(
-    @PrimaryKey(autoGenerate = true)
-    val transactionId: Long = 0,
+data class MovementEntity(
+    @PrimaryKey
+    val id: Long,
 
+    val portfolioId: Long,
     val walletId: Long,
-    val cryptoSymbol: String,
+    val assetId: String,
 
     val type: MovementType,
-
-    // Cantidad de crypto (ej. 0.01 BTC)
     val quantity: Double,
+    val price: Double?,      // opcional
+    val feeQuantity: Double, // 0.0 si no aplica
 
-    // Para BUY/SELL (en transferencias puede ser null si quieres)
-    val priceFiat: Double? = null,
-    val fiatCode: String? = null,
+    val timestamp: Long,
+    val notes: String?,
+    val groupId: Long? = null
 
-    val timestamp: Long = Instant.now().toEpochMilli(),
-    val notes: String? = null
 )

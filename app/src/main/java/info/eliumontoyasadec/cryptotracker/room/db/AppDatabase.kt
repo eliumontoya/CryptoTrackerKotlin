@@ -8,16 +8,16 @@ import androidx.room.TypeConverters
 import info.eliumontoyasadec.cryptotracker.room.dao.CryptoDao
 import info.eliumontoyasadec.cryptotracker.room.dao.FiatDao
 import info.eliumontoyasadec.cryptotracker.room.dao.HoldingDao
+import info.eliumontoyasadec.cryptotracker.room.dao.MovementDao
 import info.eliumontoyasadec.cryptotracker.room.dao.PortfolioDao
 import info.eliumontoyasadec.cryptotracker.room.dao.PortfolioSummaryDao
-import info.eliumontoyasadec.cryptotracker.room.dao.TransactionDao
 import info.eliumontoyasadec.cryptotracker.room.dao.WalletDao
 import info.eliumontoyasadec.cryptotracker.room.queries.PortfolioQueriesDao
 import info.eliumontoyasadec.cryptotracker.room.entities.CryptoEntity
 import info.eliumontoyasadec.cryptotracker.room.entities.FiatEntity
 import info.eliumontoyasadec.cryptotracker.room.entities.HoldingEntity
 import info.eliumontoyasadec.cryptotracker.room.entities.PortfolioEntity
-import info.eliumontoyasadec.cryptotracker.room.entities.TransactionEntity
+import info.eliumontoyasadec.cryptotracker.room.entities.MovementEntity
 import info.eliumontoyasadec.cryptotracker.room.entities.WalletEntity
 
 @Database(
@@ -27,7 +27,7 @@ import info.eliumontoyasadec.cryptotracker.room.entities.WalletEntity
         CryptoEntity::class,
         FiatEntity::class,
         HoldingEntity::class,
-        TransactionEntity::class
+        MovementEntity::class
     ],
     version = 2,
     exportSchema = true
@@ -40,7 +40,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun cryptoDao(): CryptoDao
     abstract fun fiatDao(): FiatDao
     abstract fun holdingDao(): HoldingDao
-    abstract fun transactionDao(): TransactionDao
+    abstract fun movementDao(): MovementDao
     abstract fun portfolioSummaryDao(): PortfolioSummaryDao
 
     // Read-only aggregated queries for UI

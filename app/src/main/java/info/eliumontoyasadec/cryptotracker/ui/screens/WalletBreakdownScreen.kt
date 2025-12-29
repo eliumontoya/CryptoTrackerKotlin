@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package info.eliumontoyasadec.cryptotracker.ui.screens
 
 import androidx.compose.foundation.clickable
@@ -18,12 +19,23 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+
+// -------- UI models --------
 
 data class WalletBreakdownRow(
     val walletName: String,
@@ -31,37 +43,53 @@ data class WalletBreakdownRow(
     val pnlUsd: Double
 )
 
-private enum class SortBy(val label: String) {
+enum class WalletSortBy(val label: String) {
     VALUE("Valor"),
     PNL("P&L")
 }
 
+// -------- UI State --------
+
+data class WalletBreakdownUiState(
+    val showEmpty: Boolean = false,
+    val sortBy: WalletSortBy = WalletSortBy.VALUE,
+    val rows: List<WalletBreakdownRow> = emptyList(),
+    val visibleRows: List<WalletBreakdownRow> = emptyList(),
+    val movementForm: WalletBreakdownMovementFormState? = null)
+
+data class WalletBreakdownMovementFormState(
+    val mode: MovementFormMode,
+    val draft: MovementDraft
+)
+
+// -------- Composable --------
+
 @Composable
 fun WalletBreakdownScreen(
-    rows: List<WalletBreakdownRow>,
-    onWalletClick: (walletName: String) -> Unit
+    state: WalletBreakdownUiState,
+    onToggleShowEmpty: () -> Unit,
+    onChangeSort: (WalletSortBy) -> Unit,
+    onWalletClick: (walletName: String) -> Unit,
+    onAddMovement: () -> Unit,
+    onDismissForm: () -> Unit,
+    onMovementDraftChange: (MovementDraft) -> Unit,
+    onMovementSave: () -> Unit
 ) {
-    // UI-only filters
-    var showEmpty by remember { mutableStateOf(false) }
-    var sortBy by remember { mutableStateOf(SortBy.VALUE) }
-
-    val filtered = rows
-        .asSequence()
-        .filter { showEmpty || it.valueUsd > 0.0 || it.pnlUsd != 0.0 }
-        .toList()
-
-    val sorted = when (sortBy) {
-        SortBy.VALUE -> filtered.sortedByDescending { it.valueUsd }
-        SortBy.PNL -> filtered.sortedByDescending { it.pnlUsd }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Desglose por Carteras", style = MaterialTheme.typography.headlineSmall)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Desglose por Carteras", style = MaterialTheme.typography.headlineSmall)
+            IconButton(onClick = onAddMovement) {
+                Icon(Icons.Filled.Add, contentDescription = "Agregar movimiento")
+            }
+        }
 
         // Filters
         ElevatedCard {
@@ -76,8 +104,8 @@ fun WalletBreakdownScreen(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     item {
                         FilterChip(
-                            selected = showEmpty,
-                            onClick = { showEmpty = !showEmpty },
+                            selected = state.showEmpty,
+                            onClick = onToggleShowEmpty,
                             label = { Text("Incluir vacías") }
                         )
                     }
@@ -87,10 +115,10 @@ fun WalletBreakdownScreen(
 
                 Text("Orden", style = MaterialTheme.typography.labelLarge)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(SortBy.entries) { opt ->
+                    items(WalletSortBy.entries) { opt ->
                         FilterChip(
-                            selected = opt == sortBy,
-                            onClick = { sortBy = opt },
+                            selected = opt == state.sortBy,
+                            onClick = { onChangeSort(opt) },
                             label = { Text(opt.label) }
                         )
                     }
@@ -109,11 +137,11 @@ fun WalletBreakdownScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Carteras", style = MaterialTheme.typography.titleMedium)
-                    Text("${sorted.size}", style = MaterialTheme.typography.labelLarge)
+                    Text("${state.visibleRows.size}", style = MaterialTheme.typography.labelLarge)
                 }
                 Divider()
 
-                if (sorted.isEmpty()) {
+                if (state.visibleRows.isEmpty()) {
                     Text(
                         text = "No hay carteras para mostrar con los filtros actuales.",
                         style = MaterialTheme.typography.bodyMedium
@@ -123,12 +151,29 @@ fun WalletBreakdownScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(sorted, key = { it.walletName }) { row ->
+                        items(state.visibleRows, key = { it.walletName }) { row ->
                             WalletRowItem(row = row, onClick = { onWalletClick(row.walletName) })
                             Divider()
                         }
                     }
                 }
+            }
+        }
+
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+        if (state.movementForm != null) {
+            ModalBottomSheet(
+                onDismissRequest = onDismissForm,
+                sheetState = sheetState
+            ) {
+                MovementFormSheetContent(
+                    mode = state.movementForm.mode,
+                    draft = state.movementForm.draft,
+                    onChange = onMovementDraftChange,
+                    onCancel = onDismissForm,
+                    onSave = onMovementSave
+                )
             }
         }
     }
@@ -158,3 +203,70 @@ private fun WalletRowItem(
 }
 
 private fun formatUsd(v: Double): String = "$" + "%,.2f".format(v)
+
+// -------- ViewModel (fake data) --------
+
+class WalletBreakdownViewModel : ViewModel() {
+
+    private val allRows = fakeWalletRows()
+
+    private val _state = MutableStateFlow(
+        WalletBreakdownUiState(
+            rows = allRows,
+            visibleRows = allRows
+        )
+    )
+    val state: StateFlow<WalletBreakdownUiState> = _state.asStateFlow()
+
+    fun toggleShowEmpty() {
+        val next = _state.value.copy(showEmpty = !_state.value.showEmpty)
+        _state.value = next.copy(visibleRows = apply(next))
+    }
+
+    fun changeSort(sort: WalletSortBy) {
+        val next = _state.value.copy(sortBy = sort)
+        _state.value = next.copy(visibleRows = apply(next))
+    }
+
+    fun startAddMovement() {
+        val st = _state.value
+        _state.value = st.copy(
+            movementForm = WalletBreakdownMovementFormState(
+                mode = MovementFormMode.CREATE,
+                draft = MovementDraft(wallet = WalletFilter.METAMASK)
+            )
+        )
+    }
+
+    fun dismissForm() {
+        _state.value = _state.value.copy(movementForm = null)
+    }
+
+    fun changeMovementDraft(draft: MovementDraft) {
+        val st = _state.value
+        val form = st.movementForm ?: return
+        _state.value = st.copy(movementForm = form.copy(draft = draft))
+    }
+
+    fun saveMovement() {
+        // UI-only: close the sheet. (Later: call use case / repo)
+        dismissForm()
+    }
+
+    private fun apply(state: WalletBreakdownUiState): List<WalletBreakdownRow> {
+        val filtered = state.rows.filter {
+            state.showEmpty || it.valueUsd > 0.0 || it.pnlUsd != 0.0
+        }
+
+        return when (state.sortBy) {
+            WalletSortBy.VALUE -> filtered.sortedByDescending { it.valueUsd }
+            WalletSortBy.PNL -> filtered.sortedByDescending { it.pnlUsd }
+        }
+    }
+}
+
+private fun fakeWalletRows(): List<WalletBreakdownRow> = listOf(
+    WalletBreakdownRow("Metamask", 10_400.0, 650.0),
+    WalletBreakdownRow("ByBit", 2_100.0, 190.0),
+    WalletBreakdownRow("Phantom", 0.0, 0.0)
+)
