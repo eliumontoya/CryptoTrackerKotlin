@@ -1,5 +1,6 @@
 package info.eliumontoyasadec.cryptotracker.room.repositories
 
+import info.eliumontoyasadec.cryptotracker.domain.model.Portfolio
 import info.eliumontoyasadec.cryptotracker.domain.repositories.PortfolioRepository
 import info.eliumontoyasadec.cryptotracker.room.dao.PortfolioDao
 import info.eliumontoyasadec.cryptotracker.room.entities.PortfolioEntity
@@ -11,15 +12,49 @@ class PortfolioRepositoryRoom(
     override suspend fun exists(portfolioId: Long): Boolean =
         dao.getById(portfolioId) != null
 
-    suspend fun getAll(): List<PortfolioEntity> = dao.getAll()
+    override suspend fun insert(portfolio: Portfolio): Long =
+        dao.insert(portfolio.toEntity())
 
-    suspend fun getById(portfolioId: Long): PortfolioEntity? = dao.getById(portfolioId)
+    override suspend fun findById(portfolioId: Long): Portfolio? =
+        dao.getById(portfolioId)?.toDomain()
 
-    suspend fun getDefault(): PortfolioEntity? = dao.getDefault()
+    override suspend fun getAll(): List<Portfolio> =
+        dao.getAll().map { it.toDomain() }
 
-    suspend fun insert(entity: PortfolioEntity): Long = dao.insert(entity)
+    override suspend fun getDefault(): Portfolio? =
+        dao.getDefault()?.toDomain()
 
-    suspend fun update(entity: PortfolioEntity) = dao.update(entity)
+    override suspend fun update(portfolio: Portfolio) {
+        val existing = dao.getById(portfolio.portfolioId) ?: return
+        dao.update(
+            existing.copy(
+                name = portfolio.name,
+                description = portfolio.description,
+                isDefault = portfolio.isDefault
+            )
+        )
+    }
 
-    suspend fun delete(entity: PortfolioEntity) = dao.delete(entity)
+    override suspend fun delete(portfolioId: Long) {
+        val existing = dao.getById(portfolioId) ?: return
+        dao.delete(existing)
+    }
 }
+
+/* =======================
+   MAPPERS (igual patrón que Wallet)
+   ======================= */
+
+private fun PortfolioEntity.toDomain(): Portfolio = Portfolio(
+    portfolioId = portfolioId,
+    name = name,
+    description = description,
+    isDefault = isDefault
+)
+
+private fun Portfolio.toEntity(): PortfolioEntity = PortfolioEntity(
+    portfolioId = portfolioId,
+    name = name,
+    description = description,
+    isDefault = isDefault
+)
