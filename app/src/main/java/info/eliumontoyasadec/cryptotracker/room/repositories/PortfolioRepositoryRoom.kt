@@ -1,11 +1,16 @@
- package info.eliumontoyasadec.cryptotracker.room.repositories
+package info.eliumontoyasadec.cryptotracker.room.repositories
 
+import info.eliumontoyasadec.cryptotracker.domain.repositories.PortfolioRepository
 import info.eliumontoyasadec.cryptotracker.room.dao.PortfolioDao
 import info.eliumontoyasadec.cryptotracker.room.entities.PortfolioEntity
 
 class PortfolioRepositoryRoom(
     private val dao: PortfolioDao
-) {
+) : PortfolioRepository {
+
+    override suspend fun exists(portfolioId: Long): Boolean =
+        dao.getById(portfolioId) != null
+
     suspend fun getAll(): List<PortfolioEntity> = dao.getAll()
 
     suspend fun getById(portfolioId: Long): PortfolioEntity? = dao.getById(portfolioId)
