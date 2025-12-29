@@ -46,6 +46,7 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import info.eliumontoyasadec.cryptotracker.ui.factories.PortfolioViewModelFactory
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
@@ -234,7 +235,14 @@ fun AppShell() {
                 modifier = Modifier.padding(padding)
             ) {
                 composable(AppDestination.Portfolio.route) {
-                    val vm: PortfolioViewModel = viewModel()
+                    val queries = LocalAppDeps.current.portfolioQueries // te explico abajo cómo crear esto
+                    val vm: PortfolioViewModel = viewModel(
+                        factory = PortfolioViewModelFactory(
+                            portfolioId = 1L, // temporal: default portfolio
+                            queries = queries
+                        )
+                    )
+
                     val state = vm.state.collectAsState().value
 
                     PortfolioScreen(
