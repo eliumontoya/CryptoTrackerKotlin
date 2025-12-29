@@ -65,7 +65,7 @@ class PortfolioSummaryRepositoryRoomTest {
     @Test
     fun portfolio_summary_totals_and_wallet_breakdown_and_holdings_lists() = runTest {
         val t1 = 1700000000000L
-        val t2 = 1700000001000L
+        val t2 = 1700000001000
         val t3 = 1700000002000L
 
         // Holdings:
