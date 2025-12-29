@@ -9,6 +9,7 @@ local.properties
 
 # OS
 .DS_Store
+*.swp
 
 *.iml
 .gradle
