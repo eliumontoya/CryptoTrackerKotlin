@@ -46,6 +46,8 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import info.eliumontoyasadec.cryptotracker.ui.admin.AdminScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
 import info.eliumontoyasadec.cryptotracker.ui.factories.PortfolioViewModelFactory
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
@@ -410,10 +412,30 @@ fun AppShell() {
                 }
 
                 composable(AppDestination.Admin.route) {
-                    PlaceholderScreen(
-                        title = "Administración",
-                        subtitle = "Pantalla de configuración (fake)."
+                    // Admin = Setup Inicial
+                    SetupInitialScreen(
+                        onDeleteAllData = { scope.launch { snackbarHostState.showSnackbar("Eliminar datos (pendiente)") } },
+                        onLoadInitialCatalogs = { scope.launch { snackbarHostState.showSnackbar("Carga catálogos (pendiente)") } },
+                        onLoadInitialMovements = { scope.launch { snackbarHostState.showSnackbar("Carga movimientos (pendiente)") } },
+                        onBackupExport = { scope.launch { snackbarHostState.showSnackbar("Generar backup (pendiente)") } },
+                        onBackupImport = { scope.launch { snackbarHostState.showSnackbar("Cargar backup (pendiente)") } }
                     )
+                }
+
+                composable(AppDestination.AdminCryptos.route) {
+                    PlaceholderScreen("Cryptos", "Catálogo de cryptos (pendiente de wiring).")
+                }
+
+                composable(AppDestination.AdminWallets.route) {
+                    PlaceholderScreen("Carteras", "Administración de carteras (pendiente de wiring).")
+                }
+
+                composable(AppDestination.AdminFiat.route) {
+                    PlaceholderScreen("FIAT", "Catálogo de monedas fiat (pendiente de wiring).")
+                }
+
+                composable(AppDestination.AdminPortfolio.route) {
+                    PlaceholderScreen("Portafolio", "Gestión de portafolios (pendiente de wiring).")
                 }
 
                 composable(
@@ -593,7 +615,9 @@ private fun AppDrawer(
         movementsMenu.forEach { dest -> DrawerItem(dest, currentRoute, onNavigate) }
 
         DrawerSectionTitle("Administración")
+
         adminMenu.forEach { dest -> DrawerItem(dest, currentRoute, onNavigate) }
+
     }
 }
 
@@ -610,17 +634,17 @@ private fun DrawerSectionTitle(text: String) {
 private fun DrawerItem(
     dest: AppDestination,
     currentRoute: String?,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     NavigationDrawerItem(
         label = { Text(dest.label) },
         selected = currentRoute == dest.route,
         onClick = { onNavigate(dest.route) },
         icon = { Icon(dest.icon, contentDescription = dest.label) },
-        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        modifier = modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
     )
 }
-
 @Composable
 private fun currentRoute(navController: NavHostController): String? {
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -635,7 +659,11 @@ private fun routeToTitle(route: String?): String = when (route) {
     AppDestination.OutMovements.route -> "Salida"
     AppDestination.BetweenWallets.route -> "Entre Carteras"
     AppDestination.Swaps.route -> "Swaps"
-    AppDestination.Admin.route -> "Administración"
+    AppDestination.Admin.route -> "Setup Inicial"
+    AppDestination.AdminCryptos.route -> "Cryptos"
+    AppDestination.AdminWallets.route -> "Carteras"
+    AppDestination.AdminFiat.route -> "FIAT"
+    AppDestination.AdminPortfolio.route -> "Portafolio"
     else -> "CryptoTracker"
 }
 
