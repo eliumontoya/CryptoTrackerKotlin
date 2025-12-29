@@ -39,7 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun cryptoDao(): CryptoDao
     abstract fun fiatDao(): FiatDao
     abstract fun holdingDao(): HoldingDao
-    abstract fun transactionDao(): MovementDao
+    abstract fun movementDao(): MovementDao
     abstract fun portfolioSummaryDao(): PortfolioSummaryDao
 
     companion object {
