@@ -26,3 +26,6 @@ local.properties
 .externalNativeBuild
 .cxx
 local.properties
+
+
+htmlReport/
