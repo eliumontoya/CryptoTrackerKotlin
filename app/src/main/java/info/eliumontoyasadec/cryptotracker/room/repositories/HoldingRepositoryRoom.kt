@@ -35,3 +35,15 @@ class HoldingRepositoryRoom(
     }
 
 }
+
+fun HoldingEntity.toDomain(): Holding = Holding(
+    id = id,
+    portfolioId = portfolioId,
+    walletId = walletId,
+    assetId = assetId,
+    quantity = quantity,
+    updatedAt = updatedAt
+)
+
+fun holdingKey(portfolioId: Long, walletId: Long, assetId: String): String =
+    "$portfolioId|$walletId|$assetId"

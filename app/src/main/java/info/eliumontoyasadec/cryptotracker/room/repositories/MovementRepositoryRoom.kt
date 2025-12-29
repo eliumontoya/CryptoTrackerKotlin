@@ -50,14 +50,7 @@ class MovementRepositoryRoom(
     }
 }
 
-class TransactionRunnerRoom(
-    private val db: AppDatabase
-) : TransactionRunner {
 
-    override suspend fun <T> runInTransaction(block: suspend () -> T): T {
-        return db.withTransaction { block() }
-    }
-}
 
 /* =======================
    MAPPERS
@@ -90,15 +83,3 @@ private fun MovementEntity.toDomain(): Movement = Movement(
     notes = notes,
     groupId = groupId
 )
-
-fun HoldingEntity.toDomain(): Holding = Holding(
-    id = id,
-    portfolioId = portfolioId,
-    walletId = walletId,
-    assetId = assetId,
-    quantity = quantity,
-    updatedAt = updatedAt
-)
-
-fun holdingKey(portfolioId: Long, walletId: Long, assetId: String): String =
-    "$portfolioId|$walletId|$assetId"
