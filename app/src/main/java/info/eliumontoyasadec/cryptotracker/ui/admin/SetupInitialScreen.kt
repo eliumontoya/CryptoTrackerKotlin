@@ -14,7 +14,8 @@ fun SetupInitialScreen(
     onLoadInitialCatalogs: () -> Unit,
     onLoadInitialMovements: () -> Unit,
     onBackupExport: () -> Unit,
-    onBackupImport: () -> Unit
+    onBackupImport: () -> Unit,
+
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp)

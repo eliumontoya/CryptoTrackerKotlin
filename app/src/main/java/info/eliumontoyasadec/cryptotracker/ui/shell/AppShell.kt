@@ -1,5 +1,5 @@
 package info.eliumontoyasadec.cryptotracker.ui.shell
-
+import info.eliumontoyasadec.cryptotracker.ui.admin.LoadInitialCatalogsScreen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -413,8 +413,8 @@ fun AppShell() {
                     // Admin = Setup Inicial
                     SetupInitialScreen(
                         onDeleteAllData = { scope.launch { snackbarHostState.showSnackbar("Eliminar datos (pendiente)") } },
-                        onLoadInitialCatalogs = { scope.launch { snackbarHostState.showSnackbar("Carga catálogos (pendiente)") } },
-                        onLoadInitialMovements = { scope.launch { snackbarHostState.showSnackbar("Carga movimientos (pendiente)") } },
+                        onLoadInitialCatalogs = { navController.navigate(AppDestination.AdminSetupCatalogs.route) } ,
+                                onLoadInitialMovements = { scope.launch { snackbarHostState.showSnackbar("Carga movimientos (pendiente)") } },
                         onBackupExport = { scope.launch { snackbarHostState.showSnackbar("Generar backup (pendiente)") } },
                         onBackupImport = { scope.launch { snackbarHostState.showSnackbar("Cargar backup (pendiente)") } }
                     )
@@ -459,6 +459,11 @@ fun AppShell() {
                     val state = vm.state.collectAsState().value
 
                     WalletDetailScreen(state = state)                }
+                composable(AppDestination.AdminSetupCatalogs.route) {
+                    LoadInitialCatalogsScreen(
+                        onClose = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }
