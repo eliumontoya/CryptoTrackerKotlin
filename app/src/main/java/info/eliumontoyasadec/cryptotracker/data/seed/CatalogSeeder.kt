@@ -17,9 +17,27 @@ data class SeedResult(
     val syncApplied: Boolean
 )
 
+data class CatalogStatus(
+    val portfolios: Int,
+    val wallets: Int,
+    val cryptos: Int,
+    val fiat: Int
+)
+
+
+
 class CatalogSeeder(
     private val db: AppDatabase
 ) {
+    suspend fun status(): CatalogStatus {
+        return CatalogStatus(
+            portfolios = db.portfolioDao().countAll(),
+            wallets = db.walletDao().countAll(),
+            cryptos = db.cryptoDao().countAll(),
+            fiat = db.fiatDao().countAll()
+        )
+    }
+
     suspend fun seed(req: SeedRequest): SeedResult {
         val portfolioDao = db.portfolioDao()
         val walletDao = db.walletDao()
@@ -32,28 +50,29 @@ class CatalogSeeder(
         var fiatUpserted = 0
         var syncApplied = false
 
-        // Carteras implica: crear portafolio default (si no existe) y wallets
-        if (req.wallets) {
+        // WALLET seed solo si pidieron y NO hay wallets
+       // if (req.wallets && walletDao.countAll() == 0) {
+        if (req.wallets ) {
             val existingDefault = portfolioDao.getDefault()
             portfolioId = existingDefault?.portfolioId ?: portfolioDao.insert(InitialCatalogSeed.defaultPortfolio)
 
-            InitialCatalogSeed.walletsFor(portfolioId).forEach {
-                walletDao.insert(it)
-                walletsInserted++
-            }
+            walletDao.upsertAll(InitialCatalogSeed.walletsFor(portfolioId))
+            walletsInserted = InitialCatalogSeed.walletsFor(portfolioId).size
+
         }
 
-        if (req.cryptos) {
+        // CRYPTO seed solo si pidieron y NO hay cryptos && cryptoDao.countAll() == 0
+        if (req.cryptos ) {
             cryptoDao.upsertAll(InitialCatalogSeed.cryptos)
             cryptosUpserted = InitialCatalogSeed.cryptos.size
         }
 
-        if (req.fiat) {
+        // FIAT seed solo si pidieron y NO hay fiat && fiatDao.countAll() == 0
+        if (req.fiat ) {
             fiatDao.upsertAll(InitialCatalogSeed.fiat)
             fiatUpserted = InitialCatalogSeed.fiat.size
         }
 
-        // SyncManual por ahora es un “flag” listo para crecer (tabla/config futura)
         if (req.syncManual) {
             syncApplied = true
         }

@@ -71,7 +71,7 @@ fun SetupInitialScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text("Backup", style = MaterialTheme.typography.titleMedium)
-                Divider()
+                HorizontalDivider()
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = onBackupExport) { Text("Generar backup") }
                     OutlinedButton(onClick = onBackupImport) { Text("Cargar backup") }

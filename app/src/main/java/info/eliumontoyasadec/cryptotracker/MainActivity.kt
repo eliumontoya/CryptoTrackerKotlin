@@ -3,12 +3,9 @@ package info.eliumontoyasadec.cryptotracker
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
-import androidx.room.Room
-import info.eliumontoyasadec.cryptotracker.ui.shell.AppDeps
+ import info.eliumontoyasadec.cryptotracker.ui.shell.AppDeps
 import info.eliumontoyasadec.cryptotracker.ui.shell.AppShell
 import info.eliumontoyasadec.cryptotracker.ui.shell.LocalAppDeps
 import info.eliumontoyasadec.cryptotracker.data.queries.RoomPortfolioQueries

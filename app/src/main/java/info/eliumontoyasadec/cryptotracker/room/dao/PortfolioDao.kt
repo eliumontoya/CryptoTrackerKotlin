@@ -5,6 +5,7 @@ import info.eliumontoyasadec.cryptotracker.room.entities.PortfolioEntity
 
 @Dao
 interface PortfolioDao {
+    @Query("SELECT COUNT(*) FROM portfolios") suspend fun countAll(): Int
 
     @Query("SELECT * FROM portfolios ORDER BY isDefault DESC, name ASC")
     suspend fun getAll(): List<PortfolioEntity>

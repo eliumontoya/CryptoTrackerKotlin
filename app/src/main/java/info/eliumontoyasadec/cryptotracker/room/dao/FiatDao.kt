@@ -5,7 +5,7 @@ import info.eliumontoyasadec.cryptotracker.room.entities.FiatEntity
 
 @Dao
 interface FiatDao {
-
+    @Query("SELECT COUNT(*) FROM portfolios") suspend fun countAll(): Int
     @Query("SELECT * FROM fiat ORDER BY code ASC")
     suspend fun getAll(): List<FiatEntity>
 

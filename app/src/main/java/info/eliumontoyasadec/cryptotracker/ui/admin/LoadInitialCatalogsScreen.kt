@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import info.eliumontoyasadec.cryptotracker.data.seed.CatalogStatus
 import info.eliumontoyasadec.cryptotracker.data.seed.SeedRequest
 import info.eliumontoyasadec.cryptotracker.ui.shell.LocalAppDeps
 import kotlinx.coroutines.launch
@@ -18,6 +19,7 @@ fun LoadInitialCatalogsScreen(
     val deps = LocalAppDeps.current
     val scope = rememberCoroutineScope()
 
+
     var wallets by remember { mutableStateOf(true) }
     var cryptos by remember { mutableStateOf(true) }
     var fiat by remember { mutableStateOf(true) }
@@ -25,6 +27,64 @@ fun LoadInitialCatalogsScreen(
 
     var loading by remember { mutableStateOf(false) }
     var lastResult by remember { mutableStateOf<String?>(null) }
+
+    var showConfirm by remember { mutableStateOf(false) }
+    var pendingRequest by remember { mutableStateOf<SeedRequest?>(null) }
+
+    var status by remember { mutableStateOf<CatalogStatus?>(null) }
+
+    LaunchedEffect(Unit) {
+        status = deps.catalogSeeder.status()
+    }
+
+    val s = status
+    val walletsAlready = (s?.wallets ?: 0) > 0
+    val cryptosAlready = (s?.cryptos ?: 0) > 0
+    val fiatAlready = (s?.fiat ?: 0) > 0
+
+
+    fun buildEffectiveRequest(): SeedRequest {
+
+        return SeedRequest(
+            wallets = wallets && !walletsAlready,
+            cryptos = cryptos && !cryptosAlready,
+            fiat = fiat && !fiatAlready,
+            syncManual = syncManual // este no depende de catálogos aún
+        )
+    }
+
+    fun requestSeed() {
+        pendingRequest = buildEffectiveRequest()
+
+        showConfirm = true
+    }
+
+    fun confirmSeed() {
+        val req = pendingRequest ?: return
+        showConfirm = false
+        loading = true
+        lastResult = null
+
+        scope.launch {
+            val resultText = try {
+                val res = deps.catalogSeeder.seed(req)
+                buildString {
+                    append("OK: ")
+                    append("wallets=${res.walletsInserted}, ")
+                    append("cryptos=${res.cryptosUpserted}, ")
+                    append("fiat=${res.fiatUpserted}")
+                }
+            } catch (t: Throwable) {
+                "Error: ${t.message ?: "fallo desconocido"}"
+            } finally {
+                loading = false
+                pendingRequest = null
+            }
+
+            lastResult = resultText
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -52,29 +112,37 @@ fun LoadInitialCatalogsScreen(
             ) {
                 CatalogToggleRow(
                     title = "Carteras",
-                    subtitle = "Crea portafolio default y wallets base",
+                    subtitle = if (walletsAlready) "Ya existe data (bloqueado)" else "Crea portafolio default y wallets base",
                     checked = wallets,
+                    enabled = !walletsAlready && !loading,
+
                     onCheckedChange = { wallets = it }
                 )
-                Divider()
+
+                HorizontalDivider()
                 CatalogToggleRow(
                     title = "Cryptos",
-                    subtitle = "Crea catálogo de cryptos (BTC, ETH, SOL, USDT...)",
+                    subtitle = if (cryptosAlready) "Ya existe data (bloqueado)" else "Crea catálogo de cryptos (BTC, ETH, SOL, USDT...)",
                     checked = cryptos,
+                    enabled = !cryptosAlready && !loading,
+
                     onCheckedChange = { cryptos = it }
                 )
-                Divider()
+                HorizontalDivider()
                 CatalogToggleRow(
                     title = "FIAT",
-                    subtitle = "Crea catálogo fiat (USD, MXN, EUR...)",
+                    subtitle = if (fiatAlready) "Ya existe data (bloqueado)" else "Crea catálogo fiat (USD, MXN, EUR...)",
                     checked = fiat,
+                    enabled = !fiatAlready && !loading,
+
                     onCheckedChange = { fiat = it }
                 )
-                Divider()
+                HorizontalDivider()
                 CatalogToggleRow(
                     title = "Sync Manual",
                     subtitle = "Aplica configuración base (placeholder listo para crecer)",
                     checked = syncManual,
+                    enabled = false,
                     onCheckedChange = { syncManual = it }
                 )
             }
@@ -86,28 +154,8 @@ fun LoadInitialCatalogsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Button(
-                    onClick = {
-                        loading = true
-                        lastResult = null
-                        scope.launch {
-                            try {
-                                val res = deps.catalogSeeder.seed(
-                                    SeedRequest(
-                                        wallets = wallets,
-                                        cryptos = cryptos,
-                                        fiat = fiat,
-                                        syncManual = syncManual
-                                    )
-                                )
-                                lastResult =
-                                    "OK: wallets=${res.walletsInserted}, cryptos=${res.cryptosUpserted}, fiat=${res.fiatUpserted}"
-                            } catch (t: Throwable) {
-                                lastResult = "Error: ${t.message ?: "fallo desconocido"}"
-                            } finally {
-                                loading = false
-                            }
-                        }
-                    },
+                    onClick = { requestSeed() },
+
                     enabled = !loading && (wallets || cryptos || fiat || syncManual),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -132,6 +180,31 @@ fun LoadInitialCatalogsScreen(
             }
         }
     }
+
+    if (showConfirm) {
+        val req = pendingRequest
+        AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            title = { Text("Confirmar carga") },
+            text = {
+                Text(
+                    buildString {
+                        appendLine("Se crearán datos predeterminados en la base de datos:")
+                        if (req?.wallets == true) appendLine("• Portafolio + Carteras")
+                        if (req?.cryptos == true) appendLine("• Catálogo de Cryptos")
+                        if (req?.fiat == true) appendLine("• Catálogo FIAT")
+                        if (req?.syncManual == true) appendLine("• Configuración Sync Manual")
+                    }
+                )
+            },
+            confirmButton = {
+                Button(onClick = { confirmSeed() }) { Text("Confirmar") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showConfirm = false }) { Text("Cancelar") }
+            }
+        )
+    }
 }
 
 @Composable
@@ -139,6 +212,7 @@ private fun CatalogToggleRow(
     title: String,
     subtitle: String,
     checked: Boolean,
+    enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
@@ -149,6 +223,10 @@ private fun CatalogToggleRow(
             Text(title, style = MaterialTheme.typography.titleSmall)
             Text(subtitle, style = MaterialTheme.typography.bodySmall)
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(
+            checked = checked,
+            onCheckedChange = { if (enabled) onCheckedChange(it) },
+            enabled = enabled
+        )
     }
 }
