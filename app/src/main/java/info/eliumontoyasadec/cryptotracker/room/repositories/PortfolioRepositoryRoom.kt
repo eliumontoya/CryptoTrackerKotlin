@@ -10,10 +10,9 @@ class PortfolioRepositoryRoom(
 ) : PortfolioRepository {
 
     override suspend fun exists(portfolioId: Long): Boolean =
-        dao.getById(portfolioId) != null
+        dao.exists(portfolioId)
 
-    override suspend fun insert(portfolio: Portfolio): Long =
-        dao.insert(portfolio.toEntity())
+
 
     override suspend fun findById(portfolioId: Long): Portfolio? =
         dao.getById(portfolioId)?.toDomain()
@@ -24,20 +23,54 @@ class PortfolioRepositoryRoom(
     override suspend fun getDefault(): Portfolio? =
         dao.getDefault()?.toDomain()
 
-    override suspend fun update(portfolio: Portfolio) {
-        val existing = dao.getById(portfolio.portfolioId) ?: return
-        dao.update(
-            existing.copy(
-                name = portfolio.name,
-                description = portfolio.description,
-                isDefault = portfolio.isDefault
-            )
+    override suspend fun insert(portfolio: Portfolio): Long {
+        val normalized = portfolio.copy(
+            name = portfolio.name.trim(),
+            description = portfolio.description?.trim().takeUnless { it.isNullOrBlank() }
         )
+
+        if (normalized.isDefault) {
+            dao.clearDefault()
+        }
+        return dao.insert(normalized.toEntity())
+    }
+
+    override suspend fun update(portfolio: Portfolio) {
+        val current = dao.getById(portfolio.portfolioId) ?: throw IllegalArgumentException("Portfolio not found: ${portfolio.portfolioId}")
+        val normalized = portfolio.copy(
+            name = portfolio.name.trim(),
+            description = portfolio.description?.trim().takeUnless { it.isNullOrBlank() }
+        )
+
+        if (normalized.isDefault && !current.isDefault) {
+            dao.clearDefault()
+        }
+
+        dao.update(normalized.toEntity())
     }
 
     override suspend fun delete(portfolioId: Long) {
         val existing = dao.getById(portfolioId) ?: return
         dao.delete(existing)
+    }
+
+    override suspend fun delete(portfolio: Portfolio) {
+        val existing = dao.getById(portfolio.portfolioId) ?: return
+         dao.delete(existing)
+    }
+
+    override suspend fun isDefault(portfolioId: Long): Boolean {
+        return dao.isDefault(portfolioId)
+    }
+
+    override suspend fun setDefault(portfolioId: Long) {
+        val current = dao.getById(portfolioId)
+            ?: error("Portfolio $portfolioId no existe")
+
+        if (current.isDefault) return // idempotente
+
+        dao.clearDefault()
+        dao.update(current.copy(isDefault = true))
     }
 }
 
@@ -45,14 +78,14 @@ class PortfolioRepositoryRoom(
    MAPPERS (igual patrón que Wallet)
    ======================= */
 
-private fun PortfolioEntity.toDomain(): Portfolio = Portfolio(
+fun PortfolioEntity.toDomain(): Portfolio = Portfolio(
     portfolioId = portfolioId,
     name = name,
     description = description,
     isDefault = isDefault
 )
 
-private fun Portfolio.toEntity(): PortfolioEntity = PortfolioEntity(
+fun Portfolio.toEntity(): PortfolioEntity = PortfolioEntity(
     portfolioId = portfolioId,
     name = name,
     description = description,

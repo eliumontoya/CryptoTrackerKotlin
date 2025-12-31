@@ -45,6 +45,7 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import info.eliumontoyasadec.cryptotracker.ui.admin.AdminPortfoliosScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.DeleteDataScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
 import info.eliumontoyasadec.cryptotracker.ui.factories.PortfolioViewModelFactory
@@ -438,8 +439,9 @@ fun AppShell() {
                 }
 
                 composable(AppDestination.AdminPortfolio.route) {
-                    PlaceholderScreen("Portafolio", "Gestión de portafolios (pendiente de wiring).")
-                }
+                    AdminPortfoliosScreen(
+                        onClose = { navController.popBackStack() }
+                    )                }
 
                 composable(
                     route = AppDestination.CryptoDetail.route,

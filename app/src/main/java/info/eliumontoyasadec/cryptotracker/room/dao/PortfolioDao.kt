@@ -25,8 +25,16 @@ interface PortfolioDao {
     @Delete
     suspend fun delete(portfolio: PortfolioEntity)
 
-
+    @Query("SELECT isDefault FROM portfolios WHERE portfolioId = :id")
+    suspend fun isDefault(id: Long): Boolean
     @Query("DELETE FROM portfolios")
     suspend fun deleteAll()
+    @Query("UPDATE portfolios SET isDefault = 0")
+    suspend fun clearDefault()
 
+    @Query("DELETE FROM portfolios WHERE portfolioId = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM portfolios WHERE portfolioId = :id)")
+    suspend fun exists(id: Long): Boolean
 }

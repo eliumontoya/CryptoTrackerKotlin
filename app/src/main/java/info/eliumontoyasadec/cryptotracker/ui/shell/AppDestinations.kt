@@ -27,7 +27,7 @@ sealed class AppDestination(
     data object AdminCryptos : AppDestination("admin/cryptos", "Cryptos", Icons.Filled.CurrencyExchange)
     data object AdminWallets : AppDestination("admin/wallets", "Carteras", Icons.Filled.AccountBalanceWallet)
     data object AdminFiat : AppDestination("admin/fiat", "FIAT", Icons.Filled.AttachMoney)
-    data object AdminPortfolio : AppDestination("admin/portfolio", "Portafolio", Icons.Filled.PieChart)
+    data object AdminPortfolio : AppDestination("admin/portfolio", "Portafolio", Icons.Filled.Folder)
     data object AdminSetupCatalogs : AppDestination(
         "admin/setup/catalogs",
         "Carga de Catálogos",

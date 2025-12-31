@@ -12,4 +12,7 @@ interface PortfolioRepository {
     suspend fun getDefault(): Portfolio?
     suspend fun update(portfolio: Portfolio)
     suspend fun delete(portfolioId: Long)
+    suspend fun delete(portfolio: Portfolio)
+    suspend fun isDefault(portfolioId: Long): Boolean
+    suspend fun setDefault(portfolioId: Long)
 }
