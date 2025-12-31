@@ -114,6 +114,10 @@ interface HoldingDao {
     """
     )
     suspend fun findByWalletAsset(walletId: Long, assetId: String): HoldingEntity?
+
+
+    @Query("SELECT COUNT(*) FROM holdings")
+    suspend fun countAll(): Int
 }
 
  /**

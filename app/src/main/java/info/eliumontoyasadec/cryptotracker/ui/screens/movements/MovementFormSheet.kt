@@ -13,8 +13,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.Divider
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -102,7 +102,7 @@ fun MovementFormSheetContent(
         )
         Text("(sin wiring) Este formulario actualiza estado fake.", style = MaterialTheme.typography.bodySmall)
 
-        Divider()
+        HorizontalDivider()
 
         Text("Cartera", style = MaterialTheme.typography.labelLarge)
         ChipRow(

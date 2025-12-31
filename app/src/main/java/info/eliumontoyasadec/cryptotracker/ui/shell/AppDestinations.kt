@@ -33,6 +33,7 @@ sealed class AppDestination(
         "Carga de Catálogos",
         Icons.Filled.Download
     )
+    data object AdminDeleteData : AppDestination("admin/delete_data", "Eliminar Datos", Icons.Filled.Delete)
     data object CryptoDetail : AppDestination("crypto_detail/{symbol}", "Detalle Crypto", Icons.Filled.Info)
     data object WalletDetail : AppDestination("wallet_detail/{wallet}", "Detalle Cartera", Icons.Filled.Info)
 }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
@@ -98,7 +98,7 @@ fun WalletBreakdownScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text("Filtros", style = MaterialTheme.typography.titleMedium)
-                Divider()
+                HorizontalDivider()
 
                 Text("Mostrar", style = MaterialTheme.typography.labelLarge)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -139,7 +139,7 @@ fun WalletBreakdownScreen(
                     Text("Carteras", style = MaterialTheme.typography.titleMedium)
                     Text("${state.visibleRows.size}", style = MaterialTheme.typography.labelLarge)
                 }
-                Divider()
+                HorizontalDivider()
 
                 if (state.visibleRows.isEmpty()) {
                     Text(
@@ -153,7 +153,7 @@ fun WalletBreakdownScreen(
                     ) {
                         items(state.visibleRows, key = { it.walletName }) { row ->
                             WalletRowItem(row = row, onClick = { onWalletClick(row.walletName) })
-                            Divider()
+                            HorizontalDivider()
                         }
                     }
                 }

@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -40,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.HorizontalDivider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
@@ -153,7 +153,7 @@ fun MovementsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text("Filtros", style = MaterialTheme.typography.titleMedium)
-                Divider()
+                HorizontalDivider()
 
                 Text("Cartera", style = MaterialTheme.typography.labelLarge)
                 ChipRow(
@@ -191,7 +191,7 @@ fun MovementsScreen(
                         OutlinedButton(onClick = onCreate) { Text("Nuevo") }
                     }
                 }
-                Divider()
+                HorizontalDivider()
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -248,7 +248,7 @@ fun MovementsScreen(
                                 onEdit = { onEdit(row) },
                                 onDelete = { onRequestDelete(row) }
                             )
-                            Divider()
+                            HorizontalDivider()
                         }
                     }
                 }

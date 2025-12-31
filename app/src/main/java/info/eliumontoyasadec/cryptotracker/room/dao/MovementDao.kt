@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 import info.eliumontoyasadec.cryptotracker.room.entities.MovementEntity
 
 @Dao
@@ -34,4 +35,13 @@ interface MovementDao {
         portfolioId: Long,
         walletId: Long
     ): List<MovementEntity>
+
+    @Query("DELETE FROM movements")
+    suspend fun deleteAll()
+
+    @Query("DELETE FROM movements WHERE type = :type")
+    suspend fun deleteAll(type: MovementType)
+
+    @Query("SELECT COUNT(*) FROM movements")
+    suspend fun countAll(): Int
 }

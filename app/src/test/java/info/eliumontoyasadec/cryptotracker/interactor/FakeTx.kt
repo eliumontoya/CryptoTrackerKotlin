@@ -137,11 +137,11 @@ class FakeMovementRepo : MovementRepository {
         val existing = store[movementId] ?: return
 
         store[movementId] = existing.copy(
-            type = update.type ?: existing.type,
-            quantity = update.quantity ?: existing.quantity,
-            feeQuantity = update.feeQuantity ?: existing.feeQuantity,
+            type = update.type,
+            quantity = update.quantity,
+            feeQuantity = update.feeQuantity,
             price = update.price ?: existing.price,
-            timestamp = update.timestamp ?: existing.timestamp,
+            timestamp = update.timestamp,
             groupId = update.groupId ?: existing.groupId
         )
 

@@ -10,6 +10,7 @@ import info.eliumontoyasadec.cryptotracker.ui.shell.AppShell
 import info.eliumontoyasadec.cryptotracker.ui.shell.LocalAppDeps
 import info.eliumontoyasadec.cryptotracker.data.queries.RoomPortfolioQueries
 import info.eliumontoyasadec.cryptotracker.data.seed.CatalogSeeder
+import info.eliumontoyasadec.cryptotracker.data.seed.DatabaseWiper
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 
 class MainActivity : ComponentActivity() {
@@ -23,7 +24,8 @@ class MainActivity : ComponentActivity() {
 
             AppDeps(
                 portfolioQueries = RoomPortfolioQueries(portfolioQueriesDao),
-                catalogSeeder = CatalogSeeder(db)
+                catalogSeeder = CatalogSeeder(db),
+                databaseWiper = DatabaseWiper(db)
 
             )
         }

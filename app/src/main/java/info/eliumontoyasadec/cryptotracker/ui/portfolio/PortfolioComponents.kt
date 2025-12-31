@@ -66,7 +66,7 @@ fun HoldingsCard(
     ElevatedCard {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Holdings", style = MaterialTheme.typography.titleMedium)
-            Divider()
+            HorizontalDivider()
 
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
@@ -74,7 +74,7 @@ fun HoldingsCard(
             ) {
                 items(rows, key = { it.symbol }) { row ->
                     HoldingRow(row = row, onClick = { onRowClick(row.symbol) })
-                    Divider()
+                    HorizontalDivider()
                 }
             }
         }

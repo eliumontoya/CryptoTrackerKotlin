@@ -5,7 +5,12 @@ import info.eliumontoyasadec.cryptotracker.room.entities.CryptoEntity
 
 @Dao
 interface CryptoDao {
-    @Query("SELECT COUNT(*) FROM portfolios") suspend fun countAll(): Int
+
+    @Query("DELETE FROM cryptos")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM cryptos")
+    suspend fun countAll(): Int
     @Query("SELECT * FROM cryptos ORDER BY name ASC")
     suspend fun getAll(): List<CryptoEntity>
 

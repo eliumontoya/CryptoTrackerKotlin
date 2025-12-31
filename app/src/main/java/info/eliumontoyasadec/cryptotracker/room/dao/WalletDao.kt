@@ -9,7 +9,6 @@ interface WalletDao {
     @Query("SELECT * FROM wallets WHERE portfolioId = :portfolioId ORDER BY isMain DESC, name ASC")
     suspend fun getByPortfolio(portfolioId: Long): List<WalletEntity>
 
-    @Query("SELECT COUNT(*) FROM portfolios") suspend fun countAll(): Int
 
     @Query("SELECT * FROM wallets WHERE walletId = :walletId LIMIT 1")
     suspend fun getById(walletId: Long): WalletEntity?
@@ -28,4 +27,10 @@ interface WalletDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(items: List<WalletEntity>)
+
+    @Query("DELETE FROM wallets")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM wallets")
+    suspend fun countAll(): Int
 }

@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -108,7 +108,7 @@ private fun WalletSummaryCard(totalValueUsd: Double, totalPnlUsd: Double) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text("Resumen", style = MaterialTheme.typography.titleMedium)
-            Divider()
+            HorizontalDivider()
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -150,7 +150,7 @@ private fun WalletHoldingsList(rows: List<WalletCryptoRow>) {
                 Text("Holdings", style = MaterialTheme.typography.titleMedium)
                 Text("${rows.size}", style = MaterialTheme.typography.labelLarge)
             }
-            Divider()
+            HorizontalDivider()
 
             if (rows.isEmpty()) {
                 Text(
@@ -164,7 +164,7 @@ private fun WalletHoldingsList(rows: List<WalletCryptoRow>) {
                 ) {
                     items(rows, key = { it.symbol }) { r ->
                         HoldingRowItem(r)
-                        Divider()
+                        HorizontalDivider()
                     }
                 }
             }
@@ -209,7 +209,7 @@ private fun WalletMovementsList(rows: List<WalletMovementRow>) {
                 Text("Movimientos", style = MaterialTheme.typography.titleMedium)
                 Text("${rows.size}", style = MaterialTheme.typography.labelLarge)
             }
-            Divider()
+            HorizontalDivider()
 
             if (rows.isEmpty()) {
                 Text(
@@ -223,7 +223,7 @@ private fun WalletMovementsList(rows: List<WalletMovementRow>) {
                 ) {
                     items(rows, key = { it.dateLabel + it.description }) { r ->
                         MovementRowItem(r)
-                        Divider()
+                        HorizontalDivider()
                     }
                 }
             }

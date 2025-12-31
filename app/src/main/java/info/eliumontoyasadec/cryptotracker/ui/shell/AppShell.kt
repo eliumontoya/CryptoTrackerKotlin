@@ -45,7 +45,8 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
- import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.DeleteDataScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
 import info.eliumontoyasadec.cryptotracker.ui.factories.PortfolioViewModelFactory
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
@@ -412,14 +413,18 @@ fun AppShell() {
                 composable(AppDestination.Admin.route) {
                     // Admin = Setup Inicial
                     SetupInitialScreen(
-                        onDeleteAllData = { scope.launch { snackbarHostState.showSnackbar("Eliminar datos (pendiente)") } },
-                        onLoadInitialCatalogs = { navController.navigate(AppDestination.AdminSetupCatalogs.route) } ,
+                        onDeleteAllData = { navController.navigate(AppDestination.AdminDeleteData.route) },
+                         onLoadInitialCatalogs = { navController.navigate(AppDestination.AdminSetupCatalogs.route) } ,
                                 onLoadInitialMovements = { scope.launch { snackbarHostState.showSnackbar("Carga movimientos (pendiente)") } },
                         onBackupExport = { scope.launch { snackbarHostState.showSnackbar("Generar backup (pendiente)") } },
                         onBackupImport = { scope.launch { snackbarHostState.showSnackbar("Cargar backup (pendiente)") } }
                     )
                 }
-
+                composable(AppDestination.AdminDeleteData.route) {
+                    DeleteDataScreen(
+                        onClose = { navController.popBackStack() }
+                    )
+                }
                 composable(AppDestination.AdminCryptos.route) {
                     PlaceholderScreen("Cryptos", "Catálogo de cryptos (pendiente de wiring).")
                 }

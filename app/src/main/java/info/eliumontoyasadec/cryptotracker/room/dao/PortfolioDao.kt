@@ -24,4 +24,9 @@ interface PortfolioDao {
 
     @Delete
     suspend fun delete(portfolio: PortfolioEntity)
+
+
+    @Query("DELETE FROM portfolios")
+    suspend fun deleteAll()
+
 }

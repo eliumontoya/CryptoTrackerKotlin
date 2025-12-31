@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,7 +65,7 @@ fun CryptoDetailScreen(state: CryptoDetailUiState) {
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text("Resumen", style = MaterialTheme.typography.titleMedium)
-                Divider()
+                HorizontalDivider()
                 SummaryRow("Cantidad total", formatQty(state.totalQty))
                 SummaryRow("USD adquirido", formatUsd(state.totalCostUsd))
                 SummaryRow("P&L (fake)", formatUsd(state.totalPnlUsd))
@@ -85,7 +85,7 @@ fun CryptoDetailScreen(state: CryptoDetailUiState) {
                     Text("Distribución por cartera", style = MaterialTheme.typography.titleMedium)
                     Text("${state.byWallet.size}", style = MaterialTheme.typography.labelLarge)
                 }
-                Divider()
+                HorizontalDivider()
                 if (state.byWallet.isEmpty()) {
                     Text("No hay holdings para esta crypto.")
                 } else {
@@ -115,7 +115,7 @@ fun CryptoDetailScreen(state: CryptoDetailUiState) {
                     Text("Movimientos", style = MaterialTheme.typography.titleMedium)
                     Text("${state.movements.size}", style = MaterialTheme.typography.labelLarge)
                 }
-                Divider()
+                HorizontalDivider()
                 if (state.movements.isEmpty()) {
                     Text("No hay movimientos para esta crypto.")
                 } else {
@@ -128,7 +128,7 @@ fun CryptoDetailScreen(state: CryptoDetailUiState) {
                                 Text(m.dateLabel, style = MaterialTheme.typography.labelMedium)
                                 Text(m.description)
                             }
-                            Divider()
+                            HorizontalDivider()
                         }
                     }
                 }
