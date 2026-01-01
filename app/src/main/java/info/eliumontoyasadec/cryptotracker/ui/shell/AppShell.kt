@@ -48,6 +48,7 @@ import androidx.navigation.navArgument
 import info.eliumontoyasadec.cryptotracker.ui.admin.AdminPortfoliosScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.DeleteDataScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.wallets.AdminWalletsScreen
 import info.eliumontoyasadec.cryptotracker.ui.factories.PortfolioViewModelFactory
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
@@ -431,7 +432,9 @@ fun AppShell() {
                 }
 
                 composable(AppDestination.AdminWallets.route) {
-                    PlaceholderScreen("Carteras", "Administración de carteras (pendiente de wiring).")
+                    AdminWalletsScreen(
+                        onClose = { navController.popBackStack() }
+                    )
                 }
 
                 composable(AppDestination.AdminFiat.route) {

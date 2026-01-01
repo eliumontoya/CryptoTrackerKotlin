@@ -13,12 +13,12 @@ class PortfolioRepositoryRoom(
         dao.exists(portfolioId)
 
 
-
     override suspend fun findById(portfolioId: Long): Portfolio? =
         dao.getById(portfolioId)?.toDomain()
 
     override suspend fun getAll(): List<Portfolio> =
         dao.getAll().map { it.toDomain() }
+
 
     override suspend fun getDefault(): Portfolio? =
         dao.getDefault()?.toDomain()
@@ -36,7 +36,8 @@ class PortfolioRepositoryRoom(
     }
 
     override suspend fun update(portfolio: Portfolio) {
-        val current = dao.getById(portfolio.portfolioId) ?: throw IllegalArgumentException("Portfolio not found: ${portfolio.portfolioId}")
+        val current = dao.getById(portfolio.portfolioId)
+            ?: throw IllegalArgumentException("Portfolio not found: ${portfolio.portfolioId}")
         val normalized = portfolio.copy(
             name = portfolio.name.trim(),
             description = portfolio.description?.trim().takeUnless { it.isNullOrBlank() }
@@ -56,7 +57,7 @@ class PortfolioRepositoryRoom(
 
     override suspend fun delete(portfolio: Portfolio) {
         val existing = dao.getById(portfolio.portfolioId) ?: return
-         dao.delete(existing)
+        dao.delete(existing)
     }
 
     override suspend fun isDefault(portfolioId: Long): Boolean {

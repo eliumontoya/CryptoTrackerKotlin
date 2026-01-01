@@ -11,4 +11,8 @@ interface WalletRepository {
     suspend fun getByPortfolio(portfolioId: Long): List<Wallet>
     suspend fun update(wallet: Wallet)
     suspend fun delete(walletId: Long)
+    // Default (main)
+    suspend fun isMain(walletId: Long): Boolean
+    suspend fun setMain(walletId: Long)
+    suspend fun update(walletId: Long, name: String)
 }
