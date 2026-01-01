@@ -1,4 +1,4 @@
-package info.eliumontoyasadec.cryptotracker.ui.admin
+package info.eliumontoyasadec.cryptotracker.ui.admin.delete
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,83 +21,28 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import info.eliumontoyasadec.cryptotracker.data.seed.DeleteRequest
-import info.eliumontoyasadec.cryptotracker.data.seed.DeleteResult
+import androidx.lifecycle.viewmodel.compose.viewModel
 import info.eliumontoyasadec.cryptotracker.ui.shell.LocalAppDeps
-import kotlinx.coroutines.launch
 
 @Composable
 fun DeleteDataScreen(
     onClose: () -> Unit
 ) {
     val deps = LocalAppDeps.current
-    val scope = rememberCoroutineScope()
 
-    var all by remember { mutableStateOf(false) }
-
-    var cryptos by remember { mutableStateOf(true) }
-    var wallets by remember { mutableStateOf(true) }
-    var fiat by remember { mutableStateOf(true) }
-    var movements by remember { mutableStateOf(true) }
-    var holdings by remember { mutableStateOf(true) }
-    var portfolio by remember { mutableStateOf(true) }
-
-    var loading by remember { mutableStateOf(false) }
-
-    var showConfirm by remember { mutableStateOf(false) }
-    var pendingRequest by remember { mutableStateOf<DeleteRequest?>(null) }
-
-    // Modal final (resultado)
-    var showResult by remember { mutableStateOf(false) }
-    var lastResult by remember { mutableStateOf<DeleteResult?>(null) }
-    var lastError by remember { mutableStateOf<String?>(null) }
-
-    fun buildRequest(): DeleteRequest = DeleteRequest(
-        all = all,
-        wallets = if (all) true else wallets,
-        cryptos = if (all) true else cryptos,
-        fiat = if (all) true else fiat,
-        movements = if (all) true else movements,
-        holdings = if (all) true else holdings,
-        portfolio = if (all) true else portfolio
+    val vm: DeleteDataViewModel = viewModel(
+        factory = DeleteDataViewModelFactory(deps.databaseWiper)
     )
 
-    fun openConfirm() {
-        pendingRequest = buildRequest()
-        showConfirm = true
-    }
-
-    fun confirmDelete() {
-        val req = pendingRequest ?: return
-
-        // cierra confirmación y ejecuta
-        showConfirm = false
-        loading = true
-
-        scope.launch {
-            try {
-                val res = deps.databaseWiper.wipe(req)
-                lastResult = res
-                lastError = null
-            } catch (t: Throwable) {
-                lastResult = null
-                lastError = t.message ?: "Fallo desconocido"
-            } finally {
-                loading = false
-                pendingRequest = null
-                showResult = true
-            }
-        }
-    }
-
-    val anySelected = all || cryptos || wallets || fiat || movements || holdings || portfolio
+    var state by remember { mutableStateOf(vm.state) }
+    LaunchedEffect(vm.state) { state = vm.state }
 
     Column(
         modifier = Modifier
@@ -122,64 +67,94 @@ fun DeleteDataScreen(
                 modifier = Modifier.padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                ToggleRow(title = "Eliminar todo",
+                ToggleRow(
+                    title = "Eliminar todo",
                     subtitle = "Borra toda la base de datos",
-                    checked = all,
-                    enabled = !loading,
+                    checked = state.all,
+                    enabled = !state.loading,
                     onCheckedChange = {
-                        all = it
-                        if (it) {
-                            cryptos = true
-                            wallets = true
-                            fiat = true
-                            movements = true
-                            holdings = true
-                            portfolio = true
-                        }
-                    })
+                        vm.dispatch(DeleteDataAction.ToggleAll(it))
+                        state = vm.state
+                    }
+                )
 
                 HorizontalDivider()
 
-                ToggleRow(title = "Movimientos",
+                ToggleRow(
+                    title = "Movimientos",
                     subtitle = "Borra movimientos registrados",
-                    checked = movements,
-                    enabled = !loading && !all,
-                    onCheckedChange = { movements = it })
+                    checked = state.movements,
+                    enabled = !state.loading && !state.all,
+                    onCheckedChange = {
+                        vm.dispatch(DeleteDataAction.ToggleMovements(it))
+                        state = vm.state
+                    }
+                )
+
                 HorizontalDivider()
 
-                ToggleRow(title = "Holdings",
+                ToggleRow(
+                    title = "Holdings",
                     subtitle = "Borra holdings calculados",
-                    checked = holdings,
-                    enabled = !loading && !all,
-                    onCheckedChange = { holdings = it })
+                    checked = state.holdings,
+                    enabled = !state.loading && !state.all,
+                    onCheckedChange = {
+                        vm.dispatch(DeleteDataAction.ToggleHoldings(it))
+                        state = vm.state
+                    }
+                )
+
                 HorizontalDivider()
 
-                ToggleRow(title = "Carteras",
+                ToggleRow(
+                    title = "Carteras",
                     subtitle = "Borra carteras",
-                    checked = wallets,
-                    enabled = !loading && !all,
-                    onCheckedChange = { wallets = it })
+                    checked = state.wallets,
+                    enabled = !state.loading && !state.all,
+                    onCheckedChange = {
+                        vm.dispatch(DeleteDataAction.ToggleWallets(it))
+                        state = vm.state
+                    }
+                )
+
                 HorizontalDivider()
 
-                ToggleRow(title = "Portafolio",
+                ToggleRow(
+                    title = "Portafolio",
                     subtitle = "Borra portafolio(s)",
-                    checked = portfolio,
-                    enabled = !loading && !all,
-                    onCheckedChange = { portfolio = it })
+                    checked = state.portfolio,
+                    enabled = !state.loading && !state.all,
+                    onCheckedChange = {
+                        vm.dispatch(DeleteDataAction.TogglePortfolio(it))
+                        state = vm.state
+                    }
+                )
+
                 HorizontalDivider()
 
-                ToggleRow(title = "Cryptos",
+                ToggleRow(
+                    title = "Cryptos",
                     subtitle = "Borra catálogo de cryptos",
-                    checked = cryptos,
-                    enabled = !loading && !all,
-                    onCheckedChange = { cryptos = it })
+                    checked = state.cryptos,
+                    enabled = !state.loading && !state.all,
+                    onCheckedChange = {
+                        vm.dispatch(DeleteDataAction.ToggleCryptos(it))
+                        state = vm.state
+                    }
+                )
+
                 HorizontalDivider()
 
-                ToggleRow(title = "Monedas FIAT",
+                ToggleRow(
+                    title = "Monedas FIAT",
                     subtitle = "Borra catálogo FIAT",
-                    checked = fiat,
-                    enabled = !loading && !all,
-                    onCheckedChange = { fiat = it })
+                    checked = state.fiat,
+                    enabled = !state.loading && !state.all,
+                    onCheckedChange = {
+                        vm.dispatch(DeleteDataAction.ToggleFiat(it))
+                        state = vm.state
+                    }
+                )
             }
         }
 
@@ -193,19 +168,23 @@ fun DeleteDataScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     OutlinedButton(
-                        onClick = onClose, enabled = !loading, modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Cerrar")
-                    }
+                        onClick = onClose,
+                        enabled = !state.loading,
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Cerrar") }
 
                     Button(
-                        onClick = { openConfirm() },
-                        enabled = !loading && anySelected,
+                        onClick = {
+                            vm.dispatch(DeleteDataAction.RequestDelete)
+                            state = vm.state
+                        },
+                        enabled = !state.loading && state.anySelected,
                         modifier = Modifier.weight(1f)
                     ) {
-                        if (loading) {
+                        if (state.loading) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp), strokeWidth = 2.dp
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp
                             )
                             Spacer(Modifier.size(8.dp))
                         }
@@ -218,21 +197,22 @@ fun DeleteDataScreen(
         Spacer(Modifier.weight(1f))
 
         Row(
-            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
         ) {
             OutlinedButton(
-                onClick = onClose, enabled = !loading
-            ) {
-                Text("Cerrar")
-            }
+                onClick = onClose,
+                enabled = !state.loading
+            ) { Text("Cerrar") }
         }
     }
 
-    // Modal de confirmación
-    if (showConfirm) {
-        val req = pendingRequest
+    // Confirmación
+    if (state.showConfirm) {
+        val req = state.pendingRequest
 
-        AlertDialog(onDismissRequest = { if (!loading) showConfirm = false },
+        AlertDialog(
+            onDismissRequest = { vm.dispatch(DeleteDataAction.CancelConfirm); state = vm.state },
             title = { Text("Confirmar eliminación") },
             text = {
                 Text(buildString {
@@ -253,22 +233,26 @@ fun DeleteDataScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { confirmDelete() }, enabled = !loading
+                    onClick = { vm.dispatch(DeleteDataAction.ConfirmDelete); state = vm.state },
+                    enabled = !state.loading
                 ) { Text("Confirmar") }
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { showConfirm = false }, enabled = !loading
+                    onClick = { vm.dispatch(DeleteDataAction.CancelConfirm); state = vm.state },
+                    enabled = !state.loading
                 ) { Text("Cancelar") }
-            })
+            }
+        )
     }
 
-    // Modal final con totales borrados
-    if (showResult) {
-        val error = lastError
-        val res = lastResult
+    // Resultado
+    if (state.showResult) {
+        val error = state.lastError
+        val res = state.lastResult
 
-        AlertDialog(onDismissRequest = { /* controlado por botón */ },
+        AlertDialog(
+            onDismissRequest = { /* controlado por botón */ },
             title = { Text(if (error == null) "Eliminación completada" else "No se pudo eliminar") },
             text = {
                 if (error != null) {
@@ -289,11 +273,13 @@ fun DeleteDataScreen(
             },
             confirmButton = {
                 Button(onClick = {
-                    showResult = false
-                    // si fue éxito, volvemos a Setup Inicial
-                    if (error == null) onClose()
+                    val wasSuccess = (error == null)
+                    vm.dispatch(DeleteDataAction.DismissResult)
+                    state = vm.state
+                    if (wasSuccess) onClose()
                 }) { Text("OK") }
-            })
+            }
+        )
     }
 }
 
@@ -306,7 +292,8 @@ private fun ToggleRow(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleSmall)
