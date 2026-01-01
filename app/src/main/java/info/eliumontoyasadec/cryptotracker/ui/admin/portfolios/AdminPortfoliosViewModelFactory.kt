@@ -1,4 +1,4 @@
-package info.eliumontoyasadec.cryptotracker.ui.admin
+package info.eliumontoyasadec.cryptotracker.ui.admin.portfolios
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

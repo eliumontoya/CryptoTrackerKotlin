@@ -38,7 +38,6 @@ import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioViewModel
 import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementMode
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsScreen
-import info.eliumontoyasadec.cryptotracker.ui.screens.PlaceholderScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.PortfolioByCryptosScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownScreen
 import kotlinx.coroutines.launch
@@ -46,7 +45,7 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import info.eliumontoyasadec.cryptotracker.ui.admin.AdminPortfoliosScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.portfolios.AdminPortfoliosScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.DeleteDataScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.cryptos.AdminCryptosScreen

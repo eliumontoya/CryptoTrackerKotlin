@@ -1,4 +1,4 @@
-package info.eliumontoyasadec.cryptotracker.ui.admin
+package info.eliumontoyasadec.cryptotracker.ui.admin.portfolios
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -120,12 +120,14 @@ class AdminPortfoliosViewModel(
             try {
                 // Si el repo ya valida “si ya es default, no hace nada”, mejor.
                 repo.setDefault(id)
-                state = state.copy(items = repo.getAll(), loading = false)
+                state = state.copy(items = repo.getAll() )
             } catch (t: Throwable) {
                 state = state.copy(
-                    loading = false,
-                    error = t.message ?: "Fallo desconocido"
+                     error = t.message ?: "Fallo desconocido"
                 )
+            }
+            finally {
+                state = state.copy( loading = false)
             }
         }
     }
