@@ -8,4 +8,7 @@ interface CryptoRepository {
     suspend fun upsertAll(items: List<Crypto>)
     suspend fun getAll(): List<Crypto>
     suspend fun findBySymbol(symbol: String): Crypto?
+    suspend fun upsertOne(item: Crypto)
+
+    suspend fun deleteBySymbol(symbol: String): Int
 }

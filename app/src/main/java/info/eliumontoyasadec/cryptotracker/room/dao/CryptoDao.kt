@@ -19,4 +19,12 @@ interface CryptoDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(items: List<CryptoEntity>)
+
+
+    @Upsert
+    suspend fun upsertOne(item: CryptoEntity)
+
+    @Query("DELETE FROM cryptos WHERE symbol = :symbol")
+    suspend fun deleteBySymbol(symbol: String): Int
+
 }

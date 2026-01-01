@@ -9,6 +9,7 @@ import info.eliumontoyasadec.cryptotracker.data.queries.RoomPortfolioQueries
 import info.eliumontoyasadec.cryptotracker.data.seed.CatalogSeeder
 import info.eliumontoyasadec.cryptotracker.data.seed.DatabaseWiper
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
+import info.eliumontoyasadec.cryptotracker.room.repositories.CryptoRepositoryRoom
 import info.eliumontoyasadec.cryptotracker.room.repositories.PortfolioRepositoryRoom
 import info.eliumontoyasadec.cryptotracker.room.repositories.WalletRepositoryRoom
 import info.eliumontoyasadec.cryptotracker.ui.shell.AppDeps
@@ -31,7 +32,9 @@ class MainActivity : ComponentActivity() {
                     catalogSeeder = CatalogSeeder(db),
                     databaseWiper = DatabaseWiper(db),
                     portfolioRepository = PortfolioRepositoryRoom(db.portfolioDao()),
-                    walletRepository = WalletRepositoryRoom(db.walletDao())
+                    walletRepository = WalletRepositoryRoom(db.walletDao()),
+                    cryptoRepository = CryptoRepositoryRoom(db.cryptoDao())
+
 
                 )
             }

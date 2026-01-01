@@ -1,4 +1,5 @@
 package info.eliumontoyasadec.cryptotracker.ui.shell
+
 import info.eliumontoyasadec.cryptotracker.ui.admin.LoadInitialCatalogsScreen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
- import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
@@ -27,7 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
- import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -48,6 +49,7 @@ import androidx.navigation.navArgument
 import info.eliumontoyasadec.cryptotracker.ui.admin.AdminPortfoliosScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.DeleteDataScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.cryptos.AdminCryptosScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.wallets.AdminWalletsScreen
 import info.eliumontoyasadec.cryptotracker.ui.factories.PortfolioViewModelFactory
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
@@ -187,13 +189,19 @@ fun AppShell() {
                                         onClick = {
                                             val prefilled = when {
                                                 isCryptoDetail -> {
-                                                    val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) } ?: CryptoFilter.BTC
+                                                    val crypto =
+                                                        cryptoSymbol?.let { symbolToCryptoFilter(it) }
+                                                            ?: CryptoFilter.BTC
                                                     MovementDraft(crypto = crypto)
                                                 }
+
                                                 isWalletDetail -> {
-                                                    val wallet = walletName?.let { nameToWalletFilter(it) } ?: WalletFilter.METAMASK
+                                                    val wallet =
+                                                        walletName?.let { nameToWalletFilter(it) }
+                                                            ?: WalletFilter.METAMASK
                                                     MovementDraft(wallet = wallet)
                                                 }
+
                                                 else -> MovementDraft()
                                             }
                                             addMovementDraft = prefilled
@@ -207,13 +215,19 @@ fun AppShell() {
                                         onClick = {
                                             val prefilledSwap = when {
                                                 isCryptoDetail -> {
-                                                    val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) } ?: CryptoFilter.BTC
+                                                    val crypto =
+                                                        cryptoSymbol?.let { symbolToCryptoFilter(it) }
+                                                            ?: CryptoFilter.BTC
                                                     SwapDraft(fromCrypto = crypto)
                                                 }
+
                                                 isWalletDetail -> {
-                                                    val wallet = walletName?.let { nameToWalletFilter(it) } ?: WalletFilter.METAMASK
+                                                    val wallet =
+                                                        walletName?.let { nameToWalletFilter(it) }
+                                                            ?: WalletFilter.METAMASK
                                                     SwapDraft(wallet = wallet)
                                                 }
+
                                                 else -> SwapDraft()
                                             }
                                             addSwapDraft = prefilledSwap
@@ -238,7 +252,8 @@ fun AppShell() {
                 modifier = Modifier.padding(padding)
             ) {
                 composable(AppDestination.Portfolio.route) {
-                    val queries = LocalAppDeps.current.portfolioQueries // te explico abajo cómo crear esto
+                    val queries =
+                        LocalAppDeps.current.portfolioQueries // te explico abajo cómo crear esto
                     val vm: PortfolioViewModel = viewModel(
                         factory = PortfolioViewModelFactory(
                             portfolioId = 1L, // temporal: default portfolio
@@ -251,7 +266,9 @@ fun AppShell() {
                     PortfolioScreen(
                         state = state,
                         onRowClick = { symbol ->
-                            navController.navigate("crypto_detail/$symbol") { launchSingleTop = true }
+                            navController.navigate("crypto_detail/$symbol") {
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }
@@ -267,7 +284,9 @@ fun AppShell() {
                         onToggleShowEmpty = vm::toggleShowEmpty,
                         onChangeSort = vm::changeSort,
                         onWalletClick = { wallet ->
-                            navController.navigate("wallet_detail/$wallet") { launchSingleTop = true }
+                            navController.navigate("wallet_detail/$wallet") {
+                                launchSingleTop = true
+                            }
                         },
                         onAddMovement = vm::startAddMovement,
                         onDismissForm = vm::dismissForm,
@@ -416,8 +435,8 @@ fun AppShell() {
                     // Admin = Setup Inicial
                     SetupInitialScreen(
                         onDeleteAllData = { navController.navigate(AppDestination.AdminDeleteData.route) },
-                         onLoadInitialCatalogs = { navController.navigate(AppDestination.AdminSetupCatalogs.route) } ,
-                                onLoadInitialMovements = { scope.launch { snackbarHostState.showSnackbar("Carga movimientos (pendiente)") } },
+                        onLoadInitialCatalogs = { navController.navigate(AppDestination.AdminSetupCatalogs.route) },
+                        onLoadInitialMovements = { scope.launch { snackbarHostState.showSnackbar("Carga movimientos (pendiente)") } },
                         onBackupExport = { scope.launch { snackbarHostState.showSnackbar("Generar backup (pendiente)") } },
                         onBackupImport = { scope.launch { snackbarHostState.showSnackbar("Cargar backup (pendiente)") } }
                     )
@@ -428,7 +447,9 @@ fun AppShell() {
                     )
                 }
                 composable(AppDestination.AdminCryptos.route) {
-                    PlaceholderScreen("Cryptos", "Catálogo de cryptos (pendiente de wiring).")
+                    AdminCryptosScreen(
+                        onClose = { navController.popBackStack() }
+                    )
                 }
 
                 composable(AppDestination.AdminWallets.route) {
@@ -444,7 +465,8 @@ fun AppShell() {
                 composable(AppDestination.AdminPortfolio.route) {
                     AdminPortfoliosScreen(
                         onClose = { navController.popBackStack() }
-                    )                }
+                    )
+                }
 
                 composable(
                     route = AppDestination.CryptoDetail.route,
@@ -468,7 +490,8 @@ fun AppShell() {
                     )
                     val state = vm.state.collectAsState().value
 
-                    WalletDetailScreen(state = state)                }
+                    WalletDetailScreen(state = state)
+                }
                 composable(AppDestination.AdminSetupCatalogs.route) {
                     LoadInitialCatalogsScreen(
                         onClose = { navController.popBackStack() }

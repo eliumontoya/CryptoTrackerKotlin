@@ -35,6 +35,29 @@ class CryptoRepositoryRoomTest {
     fun tearDown() = db.close()
 
     @Test
+    fun getAll_is_sorted_by_name() = runTest {
+        repo.upsertAll(
+            listOf(
+                Crypto(symbol = "ETH", name = "Ethereum", coingeckoId = null),
+                Crypto(symbol = "BTC", name = "Bitcoin", coingeckoId = null),
+            )
+        )
+
+        val items = repo.getAll()
+        assertEquals(listOf("Bitcoin", "Ethereum"), items.map { it.name })
+    }
+
+    @Test
+    fun upsert_updates_existing_by_symbol() = runTest {
+        repo.upsertAll(listOf(Crypto(symbol = "BTC", name = "Bitcoin", coingeckoId = null)))
+
+        repo.upsertAll(listOf(Crypto(symbol = "BTC", name = "Bitcoin (Updated)", coingeckoId = null)))
+
+        val btc = repo.findBySymbol("BTC")
+        assertEquals("Bitcoin (Updated)", btc?.name)
+    }
+
+    @Test
     fun upsertAll_getAll_ordering_findBySymbol_replace() = runTest {
         repo.upsertAll(
             listOf(

@@ -20,6 +20,13 @@ class CryptoRepositoryRoom(
 
     override suspend fun findBySymbol(symbol: String): Crypto? =
         dao.getBySymbol(symbol)?.toDomain()
+
+    override suspend fun upsertOne(item: Crypto) {
+        dao.upsertOne(item.toEntity())
+    }
+
+    override suspend fun deleteBySymbol(symbol: String): Int =
+        dao.deleteBySymbol(symbol)
 }
 
 /* =======================
