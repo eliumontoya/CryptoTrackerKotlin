@@ -39,6 +39,50 @@ class FiatRepositoryRoomTest {
     }
 
     @Test
+    fun upsert_same_code_updates_instead_of_inserting_duplicate() = runTest {
+        // given
+        repo.upsert(Fiat(code = "USD", name = "Dólar", symbol = "$"))
+        val before = repo.countAll()
+        assertEquals(1, before)
+
+        // when
+        repo.upsert(Fiat(code = "USD", name = "US Dollar", symbol = "USD$"))
+
+        // then
+        val after = repo.countAll()
+        assertEquals(1, after)
+
+        val usd = repo.findByCode("USD")
+        requireNotNull(usd)
+        assertEquals("US Dollar", usd.name)
+        assertEquals("USD$", usd.symbol)
+    }
+
+    @Test
+    fun delete_non_existing_returns_false_or_noop() = runTest {
+        // Arrange
+        val before = repo.countAll()
+
+        // Act
+        val result = repo.delete("ZZZ") // código inexistente
+
+        // Assert
+        assertEquals(false, result) // o assertFalse(result)
+        assertEquals(before, repo.countAll())
+    }
+
+    @Test
+    fun getAll_returns_sorted_by_code() = runTest {
+        repo.upsert(Fiat(code = "MXN", name = "Peso", symbol = "$"))
+        repo.upsert(Fiat(code = "USD", name = "Dólar", symbol = "$"))
+        repo.upsert(Fiat(code = "EUR", name = "Euro", symbol = "€"))
+
+        val all = repo.getAll()
+
+        val codes = all.map { it.code }
+        assertEquals(listOf("EUR", "MXN", "USD"), codes)
+    }
+    @Test
     fun upsertAll_getAll_ordering_findByCode_replace() = runTest {
         repo.upsertAll(
             listOf(

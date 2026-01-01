@@ -20,6 +20,21 @@ class FiatRepositoryRoom(
 
     override suspend fun findByCode(code: String): Fiat? =
         dao.getByCode(code)?.toDomain()
+
+    override suspend fun upsert(item: Fiat) {
+        dao.upsert(item.toEntity())
+    }
+
+    override suspend fun countAll(): Int =
+        dao.countAll()
+    override suspend fun delete(code: String): Boolean {
+        return try {
+            dao.deleteByCode(code) > 0
+        } catch (t: Throwable) {
+             throw t
+        }
+    }
+
 }
 
 /* =======================

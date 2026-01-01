@@ -5,6 +5,7 @@ import info.eliumontoyasadec.cryptotracker.data.seed.CatalogSeeder
 import info.eliumontoyasadec.cryptotracker.data.seed.DatabaseWiper
 import info.eliumontoyasadec.cryptotracker.domain.queries.PortfolioQueries
 import info.eliumontoyasadec.cryptotracker.domain.repositories.CryptoRepository
+import info.eliumontoyasadec.cryptotracker.domain.repositories.FiatRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.PortfolioRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.WalletRepository
 
@@ -15,7 +16,8 @@ data class AppDeps(
     val databaseWiper: DatabaseWiper,
     val portfolioRepository: PortfolioRepository,
      val walletRepository: WalletRepository,
-     val cryptoRepository: CryptoRepository
+     val cryptoRepository: CryptoRepository,
+    val fiatRepository: FiatRepository
 
 
 

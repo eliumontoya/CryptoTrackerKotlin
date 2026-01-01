@@ -50,6 +50,7 @@ import info.eliumontoyasadec.cryptotracker.ui.admin.AdminPortfoliosScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.DeleteDataScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.cryptos.AdminCryptosScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.fiat.AdminFiatScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.wallets.AdminWalletsScreen
 import info.eliumontoyasadec.cryptotracker.ui.factories.PortfolioViewModelFactory
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
@@ -459,8 +460,9 @@ fun AppShell() {
                 }
 
                 composable(AppDestination.AdminFiat.route) {
-                    PlaceholderScreen("FIAT", "Catálogo de monedas fiat (pendiente de wiring).")
-                }
+                    AdminFiatScreen(
+                        onClose = { navController.popBackStack() }
+                    )                }
 
                 composable(AppDestination.AdminPortfolio.route) {
                     AdminPortfoliosScreen(

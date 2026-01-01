@@ -8,4 +8,8 @@ interface FiatRepository {
     suspend fun upsertAll(items: List<Fiat>)
     suspend fun getAll(): List<Fiat>
     suspend fun findByCode(code: String): Fiat?
+    suspend fun countAll(): Int
+
+    suspend fun upsert(item: Fiat)
+    suspend fun delete(code: String): Boolean
 }
