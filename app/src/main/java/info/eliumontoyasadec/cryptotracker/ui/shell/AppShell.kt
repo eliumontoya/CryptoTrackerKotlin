@@ -1,6 +1,6 @@
 package info.eliumontoyasadec.cryptotracker.ui.shell
 
-import info.eliumontoyasadec.cryptotracker.ui.admin.LoadInitialCatalogsScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.load.LoadInitialCatalogsScreen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
