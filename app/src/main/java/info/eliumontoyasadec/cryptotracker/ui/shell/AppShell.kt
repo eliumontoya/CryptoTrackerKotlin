@@ -47,7 +47,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import info.eliumontoyasadec.cryptotracker.ui.admin.portfolios.AdminPortfoliosScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.DeleteDataScreen
-import info.eliumontoyasadec.cryptotracker.ui.admin.SetupInitialScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.setup.SetupInitialScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.cryptos.AdminCryptosScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.fiat.AdminFiatScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.wallets.AdminWalletsScreen
