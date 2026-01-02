@@ -2,8 +2,13 @@ package info.eliumontoyasadec.cryptotracker.ui.admin.cryptos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.DeleteCryptoCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.DeleteCryptoUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.GetAllCryptosUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.UpsertCryptoCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.UpsertCryptoResult
+import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.UpsertCryptoUseCase
 import info.eliumontoyasadec.cryptotracker.domain.model.Crypto
-import info.eliumontoyasadec.cryptotracker.domain.repositories.CryptoRepository
 import kotlinx.coroutines.launch
 
 data class AdminCryptosState(
@@ -23,7 +28,9 @@ data class AdminCryptosState(
 )
 
 class AdminCryptosViewModel(
-    private val repo: CryptoRepository
+    private val getAllCryptos: GetAllCryptosUseCase,
+    private val upsertCrypto: UpsertCryptoUseCase,
+    private val deleteCrypto: DeleteCryptoUseCase
 ) : ViewModel() {
 
     var state: AdminCryptosState = AdminCryptosState()
@@ -33,7 +40,7 @@ class AdminCryptosViewModel(
         viewModelScope.launch {
             state = state.copy(loading = true, error = null, lastActionMessage = null)
             try {
-                val items = repo.getAll()
+                val items = getAllCryptos.execute()
                 state = state.copy(items = items )
             } catch (t: Throwable) {
                 state = state.copy(
@@ -87,34 +94,33 @@ class AdminCryptosViewModel(
     }
 
     fun save() {
-        val symbol = state.draftSymbol.trim()
-        val name = state.draftName.trim()
-
-        if (symbol.isBlank()) {
-            state = state.copy(error = "El símbolo es obligatorio.")
-            return
-        }
-        if (name.isBlank()) {
-            state = state.copy(error = "El nombre es obligatorio.")
-            return
-        }
-
         viewModelScope.launch {
             state = state.copy(loading = true, error = null, lastActionMessage = null)
-            try {
-                repo.upsertOne(Crypto(symbol = symbol, name = name,coingeckoId = null, isActive = state.draftActive))
-                val items = repo.getAll()
-                state = state.copy(
-                    items = items,
-                     showForm = false,
-                    lastActionMessage = if (state.isEditing) "Crypto actualizada." else "Crypto creada."
+
+            val result = upsertCrypto.execute(
+                UpsertCryptoCommand(
+                    symbolRaw = state.draftSymbol,
+                    nameRaw = state.draftName,
+                    isActive = state.draftActive,
+                    isEditing = state.isEditing
                 )
-            } catch (t: Throwable) {
-                state = state.copy(
-                     error = t.message ?: "Fallo desconocido"
-                )
-            }finally {
-                state = state.copy(loading = false)
+            )
+
+            when (result) {
+                is UpsertCryptoResult.Success -> {
+                    state = state.copy(
+                        items = result.items,
+                        showForm = false,
+                        lastActionMessage = if (result.wasUpdate) "Crypto actualizada." else "Crypto creada.",
+                        loading = false
+                    )
+                }
+                is UpsertCryptoResult.ValidationError -> {
+                    state = state.copy(error = result.message, loading = false)
+                }
+                is UpsertCryptoResult.Failure -> {
+                    state = state.copy(error = result.message, loading = false)
+                }
             }
         }
     }
@@ -132,22 +138,40 @@ class AdminCryptosViewModel(
 
         viewModelScope.launch {
             state = state.copy(loading = true, error = null, lastActionMessage = null)
-            try {
-                val deleted = repo.deleteBySymbol(symbol)
-                val items = repo.getAll()
-                state = state.copy(
-                    items = items,
-                    loading = false,
-                    pendingDeleteSymbol = null,
-                    lastActionMessage = if (deleted > 0) "Crypto eliminada." else "No se eliminó (no existía)."
-                )
-            } catch (t: Throwable) {
-                // Muy probable FK constraint si hay holdings/movements referenciando la crypto
-                state = state.copy(
-                    loading = false,
-                    pendingDeleteSymbol = null,
-                    error = t.message ?: "No se pudo eliminar (posible relación con otros datos)."
-                )
+
+            when (val result = deleteCrypto.execute(DeleteCryptoCommand(symbol))) {
+                is info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.DeleteCryptoResult.Deleted -> {
+                    state = state.copy(
+                        items = result.items,
+                        pendingDeleteSymbol = null,
+                        lastActionMessage = "Crypto eliminada.",
+                        loading = false
+                    )
+                }
+                is info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.DeleteCryptoResult.NotFound -> {
+                    state = state.copy(
+                        items = result.items,
+                        pendingDeleteSymbol = null,
+                        lastActionMessage = "No se eliminó (no existía).",
+                        loading = false
+                    )
+                }
+                is info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.DeleteCryptoResult.InUse -> {
+                    state = state.copy(
+                        items = result.items,
+                        pendingDeleteSymbol = null,
+                        error = result.message,
+                        loading = false
+                    )
+                }
+                is info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.DeleteCryptoResult.Failure -> {
+                    state = state.copy(
+                        items = result.items,
+                        pendingDeleteSymbol = null,
+                        error = result.message,
+                        loading = false
+                    )
+                }
             }
         }
     }
