@@ -1,6 +1,5 @@
 package info.eliumontoyasadec.cryptotracker.ui.shell
 
-import info.eliumontoyasadec.cryptotracker.ui.admin.load.LoadInitialCatalogsScreen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,62 +10,82 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapDraft
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapFormSheetContent
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.runtime.collectAsState
-import androidx.lifecycle.viewmodel.compose.viewModel
-import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioViewModel
-import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioScreen
-import info.eliumontoyasadec.cryptotracker.ui.screens.MovementMode
-import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsScreen
-import info.eliumontoyasadec.cryptotracker.ui.screens.PortfolioByCryptosScreen
-import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownScreen
-import kotlinx.coroutines.launch
-import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
-import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
-import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import info.eliumontoyasadec.cryptotracker.ui.admin.portfolios.AdminPortfoliosScreen
-import info.eliumontoyasadec.cryptotracker.ui.admin.delete.DeleteDataScreen
-import info.eliumontoyasadec.cryptotracker.ui.admin.setup.SetupInitialScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.cryptos.AdminCryptosScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.delete.DeleteDataScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.fiat.AdminFiatScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.load.LoadInitialCatalogsScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.portfolios.AdminPortfoliosScreen
+import info.eliumontoyasadec.cryptotracker.ui.admin.setup.SetupInitialScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.wallets.AdminWalletsScreen
 import info.eliumontoyasadec.cryptotracker.ui.factories.PortfolioViewModelFactory
+import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioScreen
+import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioViewModel
+import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
+import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
+import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
+import info.eliumontoyasadec.cryptotracker.ui.screens.MovementMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsScreen
+import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
+import info.eliumontoyasadec.cryptotracker.ui.screens.PortfolioByCryptosScreen
+import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
-import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailViewModel
-
-import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapDraft
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapFormSheetContent
+import kotlinx.coroutines.launch
 
 // UI-only filter state (visual feedback only; not wired to ViewModels yet)
 data class FilterUiState(
-    val wallet: String = "Todas",
-    val crypto: String = "Todas"
+    val wallet: String = "Todas", val crypto: String = "Todas"
 ) {
     val hasActive: Boolean get() = wallet != "Todas" || crypto != "Todas"
     val label: String get() = "Filtros: $wallet · $crypto"
@@ -104,148 +123,139 @@ fun AppShell() {
     val isWalletDetail = currentRoute == AppDestination.WalletDetail.route
     val walletName = backStackEntry?.arguments?.getString("wallet")
 
-    val isDetailScreen = isCryptoDetail || isWalletDetail
-    val isListScreen = !isDetailScreen
+    // ✅ Detail screens = show Back arrow
+    // (No tocamos el NavHost; esto solo cambia el ícono del TopAppBar)
+    val detailRoutes = setOf(
+        AppDestination.CryptoDetail.route,
+        AppDestination.WalletDetail.route,
+
+        // Admin sub-screens (opened from Setup Inicial)
+        AppDestination.AdminDeleteData.route,
+        AppDestination.AdminSetupCatalogs.route,
+        AppDestination.AdminCryptos.route,
+        AppDestination.AdminWallets.route,
+        AppDestination.AdminFiat.route,
+        AppDestination.AdminPortfolio.route
+    )
+
+    val isDetailScreen = currentRoute in detailRoutes
+
+    // ⚠️ OJO: tus acciones actuales están diseñadas para que SOLO CryptoDetail/WalletDetail
+    // muestren el menú de "Agregar" y "Refrescar".
+    // Por eso, isListScreen se mantiene como estaba (basado solo en crypto/wallet detail).
+    val isListScreen = !(isCryptoDetail || isWalletDetail)
 
     val snackbarHostState = remember { SnackbarHostState() }
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            AppDrawer(
-                currentRoute = currentRoute,
-                onNavigate = { route ->
-                    scope.launch {
-                        navController.navigate(route) {
-                            launchSingleTop = true
-                        }
-                        drawerState.close()
-                    }
+    ModalNavigationDrawer(drawerState = drawerState, drawerContent = {
+        AppDrawer(currentRoute = currentRoute, onNavigate = { route ->
+            scope.launch {
+                navController.navigate(route) {
+                    launchSingleTop = true
                 }
-            )
-        }
-    ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = when {
-                                isCryptoDetail -> cryptoSymbol ?: "Crypto"
-                                isWalletDetail -> walletName ?: "Cartera"
-                                else -> routeToTitle(currentRoute)
-                            }
-                        )
-                    },
-                    navigationIcon = {
-                        if (isDetailScreen) {
-                            IconButton(onClick = { navController.popBackStack() }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
-                        } else {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = "Menú"
-                                )
-                            }
-                        }
-                    },
-                    actions = {
-                        if (isListScreen) {
-                            if (filters.hasActive) {
-                                Text(
-                                    text = filters.label,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    modifier = Modifier.padding(end = 8.dp)
-                                )
-                                IconButton(onClick = { filters = filters.cleared() }) {
-                                    Icon(Icons.Filled.Close, contentDescription = "Limpiar filtros")
-                                }
-                            }
-
-                            IconButton(onClick = { showSearchDialog = true }) {
-                                Icon(Icons.Filled.Search, contentDescription = "Buscar")
-                            }
-                            IconButton(onClick = { showFilterDialog = true }) {
-                                Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
-                            }
-                        } else {
-                            Box {
-                                IconButton(
-                                    onClick = { showAddMenu = true }
-                                ) {
-                                    Icon(Icons.Filled.Add, contentDescription = "Agregar")
-                                }
-
-                                DropdownMenu(
-                                    expanded = showAddMenu,
-                                    onDismissRequest = { showAddMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Movimiento") },
-                                        onClick = {
-                                            val prefilled = when {
-                                                isCryptoDetail -> {
-                                                    val crypto =
-                                                        cryptoSymbol?.let { symbolToCryptoFilter(it) }
-                                                            ?: CryptoFilter.BTC
-                                                    MovementDraft(crypto = crypto)
-                                                }
-
-                                                isWalletDetail -> {
-                                                    val wallet =
-                                                        walletName?.let { nameToWalletFilter(it) }
-                                                            ?: WalletFilter.METAMASK
-                                                    MovementDraft(wallet = wallet)
-                                                }
-
-                                                else -> MovementDraft()
-                                            }
-                                            addMovementDraft = prefilled
-                                            showAddMovementDialog = true
-                                            showAddMenu = false
-                                        }
-                                    )
-
-                                    DropdownMenuItem(
-                                        text = { Text("Swap") },
-                                        onClick = {
-                                            val prefilledSwap = when {
-                                                isCryptoDetail -> {
-                                                    val crypto =
-                                                        cryptoSymbol?.let { symbolToCryptoFilter(it) }
-                                                            ?: CryptoFilter.BTC
-                                                    SwapDraft(fromCrypto = crypto)
-                                                }
-
-                                                isWalletDetail -> {
-                                                    val wallet =
-                                                        walletName?.let { nameToWalletFilter(it) }
-                                                            ?: WalletFilter.METAMASK
-                                                    SwapDraft(wallet = wallet)
-                                                }
-
-                                                else -> SwapDraft()
-                                            }
-                                            addSwapDraft = prefilledSwap
-                                            showAddSwapSheet = true
-                                            showAddMenu = false
-                                        }
-                                    )
-                                }
-                            }
-                            IconButton(onClick = { showRefreshDialog = true }) {
-                                Icon(Icons.Filled.Refresh, contentDescription = "Refrescar")
-                            }
-                        }
+                drawerState.close()
+            }
+        })
+    }) {
+        Scaffold(topBar = {
+            TopAppBar(title = {
+                Text(
+                    text = when {
+                        isCryptoDetail -> cryptoSymbol ?: "Crypto"
+                        isWalletDetail -> walletName ?: "Cartera"
+                        else -> routeToTitle(currentRoute)
                     }
                 )
-            },
-            snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-        ) { padding ->
+            }, navigationIcon = {
+                if (isDetailScreen) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                } else {
+                    IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                        Icon(
+                            imageVector = Icons.Default.Menu, contentDescription = "Menú"
+                        )
+                    }
+                }
+            }, actions = {
+                if (isListScreen) {
+                    if (filters.hasActive) {
+                        Text(
+                            text = filters.label,
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        IconButton(onClick = { filters = filters.cleared() }) {
+                            Icon(Icons.Filled.Close, contentDescription = "Limpiar filtros")
+                        }
+                    }
+
+                    IconButton(onClick = { showSearchDialog = true }) {
+                        Icon(Icons.Filled.Search, contentDescription = "Buscar")
+                    }
+                    IconButton(onClick = { showFilterDialog = true }) {
+                        Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
+                    }
+                } else {
+                    Box {
+                        IconButton(onClick = { showAddMenu = true }) {
+                            Icon(Icons.Filled.Add, contentDescription = "Agregar")
+                        }
+
+                        DropdownMenu(expanded = showAddMenu,
+                            onDismissRequest = { showAddMenu = false }) {
+                            DropdownMenuItem(text = { Text("Movimiento") }, onClick = {
+                                val prefilled = when {
+                                    isCryptoDetail -> {
+                                        val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) }
+                                            ?: CryptoFilter.BTC
+                                        MovementDraft(crypto = crypto)
+                                    }
+
+                                    isWalletDetail -> {
+                                        val wallet = walletName?.let { nameToWalletFilter(it) }
+                                            ?: WalletFilter.METAMASK
+                                        MovementDraft(wallet = wallet)
+                                    }
+
+                                    else -> MovementDraft()
+                                }
+                                addMovementDraft = prefilled
+                                showAddMovementDialog = true
+                                showAddMenu = false
+                            })
+
+                            DropdownMenuItem(text = { Text("Swap") }, onClick = {
+                                val prefilledSwap = when {
+                                    isCryptoDetail -> {
+                                        val crypto = cryptoSymbol?.let { symbolToCryptoFilter(it) }
+                                            ?: CryptoFilter.BTC
+                                        SwapDraft(fromCrypto = crypto)
+                                    }
+
+                                    isWalletDetail -> {
+                                        val wallet = walletName?.let { nameToWalletFilter(it) }
+                                            ?: WalletFilter.METAMASK
+                                        SwapDraft(wallet = wallet)
+                                    }
+
+                                    else -> SwapDraft()
+                                }
+                                addSwapDraft = prefilledSwap
+                                showAddSwapSheet = true
+                                showAddMenu = false
+                            })
+                        }
+                    }
+                    IconButton(onClick = { showRefreshDialog = true }) {
+                        Icon(Icons.Filled.Refresh, contentDescription = "Refrescar")
+                    }
+                }
+            })
+        }, snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { padding ->
             NavHost(
                 navController = navController,
                 startDestination = AppDestination.Portfolio.route,
@@ -263,14 +273,11 @@ fun AppShell() {
 
                     val state = vm.state.collectAsState().value
 
-                    PortfolioScreen(
-                        state = state,
-                        onRowClick = { symbol ->
-                            navController.navigate("crypto_detail/$symbol") {
-                                launchSingleTop = true
-                            }
+                    PortfolioScreen(state = state, onRowClick = { symbol ->
+                        navController.navigate("crypto_detail/$symbol") {
+                            launchSingleTop = true
                         }
-                    )
+                    })
                 }
                 composable(AppDestination.PortfolioByCrypto.route) {
                     PortfolioByCryptosScreen()
@@ -279,8 +286,7 @@ fun AppShell() {
                     val vm: WalletBreakdownViewModel = viewModel()
                     val state = vm.state.collectAsState().value
 
-                    WalletBreakdownScreen(
-                        state = state,
+                    WalletBreakdownScreen(state = state,
                         onToggleShowEmpty = vm::toggleShowEmpty,
                         onChangeSort = vm::changeSort,
                         onWalletClick = { wallet ->
@@ -294,19 +300,16 @@ fun AppShell() {
                         onMovementSave = {
                             vm.saveMovement()
                             scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
-                        }
-                    )
+                        })
                 }
 
                 composable(AppDestination.InMovements.route) {
                     val vm: MovementsViewModel = viewModel(
-                        key = "movements-in",
-                        factory = MovementsViewModel.Factory(MovementMode.IN)
+                        key = "movements-in", factory = MovementsViewModel.Factory(MovementMode.IN)
                     )
                     val state = vm.state.collectAsState().value
 
-                    MovementsScreen(
-                        title = "Movimientos de Entrada",
+                    MovementsScreen(title = "Movimientos de Entrada",
                         state = state,
                         onSelectWallet = vm::selectWallet,
                         onSelectCrypto = vm::selectCrypto,
@@ -328,8 +331,7 @@ fun AppShell() {
                         onSwapSave = {
                             vm.saveSwap()
                             scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
-                        }
-                    )
+                        })
                 }
                 composable(AppDestination.OutMovements.route) {
                     val vm: MovementsViewModel = viewModel(
@@ -338,8 +340,7 @@ fun AppShell() {
                     )
                     val state = vm.state.collectAsState().value
 
-                    MovementsScreen(
-                        title = "Movimientos de Salida",
+                    MovementsScreen(title = "Movimientos de Salida",
                         state = state,
                         onSelectWallet = vm::selectWallet,
                         onSelectCrypto = vm::selectCrypto,
@@ -361,8 +362,7 @@ fun AppShell() {
                         onSwapSave = {
                             vm.saveSwap()
                             scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
-                        }
-                    )
+                        })
                 }
                 composable(AppDestination.BetweenWallets.route) {
                     val vm: MovementsViewModel = viewModel(
@@ -371,8 +371,7 @@ fun AppShell() {
                     )
                     val state = vm.state.collectAsState().value
 
-                    MovementsScreen(
-                        title = "Movimientos Entre Carteras",
+                    MovementsScreen(title = "Movimientos Entre Carteras",
                         state = state,
                         onSelectWallet = vm::selectWallet,
                         onSelectCrypto = vm::selectCrypto,
@@ -394,8 +393,7 @@ fun AppShell() {
                         onSwapSave = {
                             vm.saveSwap()
                             scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
-                        }
-                    )
+                        })
                 }
                 composable(AppDestination.Swaps.route) {
                     val vm: MovementsViewModel = viewModel(
@@ -404,8 +402,7 @@ fun AppShell() {
                     )
                     val state = vm.state.collectAsState().value
 
-                    MovementsScreen(
-                        title = "Movimientos de Swaps",
+                    MovementsScreen(title = "Movimientos de Swaps",
                         state = state,
                         onSelectWallet = vm::selectWallet,
                         onSelectCrypto = vm::selectCrypto,
@@ -427,45 +424,37 @@ fun AppShell() {
                         onSwapSave = {
                             vm.saveSwap()
                             scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
-                        }
-                    )
+                        })
                 }
 
                 composable(AppDestination.Admin.route) {
                     // Admin = Setup Inicial
-                    SetupInitialScreen(
-                        onDeleteAllData = { navController.navigate(AppDestination.AdminDeleteData.route) },
+                    SetupInitialScreen(onDeleteAllData = { navController.navigate(AppDestination.AdminDeleteData.route) },
                         onLoadInitialCatalogs = { navController.navigate(AppDestination.AdminSetupCatalogs.route) },
                         onLoadInitialMovements = { scope.launch { snackbarHostState.showSnackbar("Carga movimientos (pendiente)") } },
                         onBackupExport = { scope.launch { snackbarHostState.showSnackbar("Generar backup (pendiente)") } },
-                        onBackupImport = { scope.launch { snackbarHostState.showSnackbar("Cargar backup (pendiente)") } }
-                    )
+                        onBackupImport = { scope.launch { snackbarHostState.showSnackbar("Cargar backup (pendiente)") } })
                 }
                 composable(AppDestination.AdminDeleteData.route) {
-                    DeleteDataScreen(
-                        onClose = { navController.popBackStack() }
-                    )
+                    DeleteDataScreen(onClose = { navController.popBackStack() })
                 }
                 composable(AppDestination.AdminCryptos.route) {
                     AdminCryptosScreen(
-                        onClose = { navController.popBackStack() }
                     )
                 }
 
                 composable(AppDestination.AdminWallets.route) {
                     AdminWalletsScreen(
-                        onClose = { navController.popBackStack() }
                     )
                 }
 
                 composable(AppDestination.AdminFiat.route) {
                     AdminFiatScreen(
-                        onClose = { navController.popBackStack() }
-                    )                }
+                    )
+                }
 
                 composable(AppDestination.AdminPortfolio.route) {
                     AdminPortfoliosScreen(
-                        onClose = { navController.popBackStack() }
                     )
                 }
 
@@ -494,23 +483,19 @@ fun AppShell() {
                     WalletDetailScreen(state = state)
                 }
                 composable(AppDestination.AdminSetupCatalogs.route) {
-                    LoadInitialCatalogsScreen(
-                        onClose = { navController.popBackStack() }
-                    )
+                    LoadInitialCatalogsScreen(onClose = { navController.popBackStack() })
                 }
             }
         }
     }
 
     if (showSearchDialog) {
-        AlertDialog(
-            onDismissRequest = { showSearchDialog = false },
+        AlertDialog(onDismissRequest = { showSearchDialog = false },
             confirmButton = {
                 TextButton(onClick = { showSearchDialog = false }) { Text("Cerrar") }
             },
             title = { Text("Buscar") },
-            text = { Text("Búsqueda (fake). Próximo paso: campo de texto + filtrado en UI.") }
-        )
+            text = { Text("Búsqueda (fake). Próximo paso: campo de texto + filtrado en UI.") })
     }
 
     if (showFilterDialog) {
@@ -519,8 +504,7 @@ fun AppShell() {
         var selectedCrypto by remember { mutableStateOf(filters.crypto) }
 
         ModalBottomSheet(
-            onDismissRequest = { showFilterDialog = false },
-            sheetState = sheetState
+            onDismissRequest = { showFilterDialog = false }, sheetState = sheetState
         ) {
             Column(
                 modifier = Modifier
@@ -534,26 +518,21 @@ fun AppShell() {
                     style = MaterialTheme.typography.bodySmall
                 )
 
-
                 Text("Cartera", style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Todas", "Metamask", "ByBit", "Phantom").forEach { label ->
-                        FilterChip(
-                            selected = selectedWallet == label,
+                        FilterChip(selected = selectedWallet == label,
                             onClick = { selectedWallet = label },
-                            label = { Text(label) }
-                        )
+                            label = { Text(label) })
                     }
                 }
 
                 Text("Crypto", style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Todas", "BTC", "ETH", "SOL", "ALGO", "AIXBT").forEach { label ->
-                        FilterChip(
-                            selected = selectedCrypto == label,
+                        FilterChip(selected = selectedCrypto == label,
                             onClick = { selectedCrypto = label },
-                            label = { Text(label) }
-                        )
+                            label = { Text(label) })
                     }
                 }
 
@@ -566,8 +545,7 @@ fun AppShell() {
                 Spacer(Modifier.height(4.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = { showFilterDialog = false }) { Text("Cancelar") }
                     TextButton(onClick = {
@@ -584,11 +562,9 @@ fun AppShell() {
     if (showAddMovementDialog) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
-            onDismissRequest = { showAddMovementDialog = false },
-            sheetState = sheetState
+            onDismissRequest = { showAddMovementDialog = false }, sheetState = sheetState
         ) {
-            MovementFormSheetContent(
-                mode = MovementFormMode.CREATE,
+            MovementFormSheetContent(mode = MovementFormMode.CREATE,
                 draft = addMovementDraft,
                 onChange = { addMovementDraft = it },
                 onCancel = { showAddMovementDialog = false },
@@ -596,46 +572,39 @@ fun AppShell() {
                     // UI-only: close the sheet. (Later: call use case / repo)
                     showAddMovementDialog = false
                     scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
-                }
-            )
+                })
         }
     }
 
     if (showAddSwapSheet) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
-            onDismissRequest = { showAddSwapSheet = false },
-            sheetState = sheetState
+            onDismissRequest = { showAddSwapSheet = false }, sheetState = sheetState
         ) {
-            SwapFormSheetContent(
-                draft = addSwapDraft,
+            SwapFormSheetContent(draft = addSwapDraft,
                 onChange = { addSwapDraft = it },
                 onCancel = { showAddSwapSheet = false },
                 onSave = {
                     // UI-only: close the sheet. (Later: call use case / repo)
                     showAddSwapSheet = false
                     scope.launch { snackbarHostState.showSnackbar("Swap guardado") }
-                }
-            )
+                })
         }
     }
 
     if (showRefreshDialog) {
-        AlertDialog(
-            onDismissRequest = { showRefreshDialog = false },
+        AlertDialog(onDismissRequest = { showRefreshDialog = false },
             confirmButton = {
                 TextButton(onClick = { showRefreshDialog = false }) { Text("Entendido") }
             },
             title = { Text("Refrescar") },
-            text = { Text("Refrescar (fake). Con wiring, esto reconsultará queries o invalidará caché.") }
-        )
+            text = { Text("Refrescar (fake). Con wiring, esto reconsultará queries o invalidará caché.") })
     }
 }
 
 @Composable
 private fun AppDrawer(
-    currentRoute: String?,
-    onNavigate: (String) -> Unit
+    currentRoute: String?, onNavigate: (String) -> Unit
 ) {
     ModalDrawerSheet {
         Text(
@@ -651,9 +620,7 @@ private fun AppDrawer(
         movementsMenu.forEach { dest -> DrawerItem(dest, currentRoute, onNavigate) }
 
         DrawerSectionTitle("Administración")
-
         adminMenu.forEach { dest -> DrawerItem(dest, currentRoute, onNavigate) }
-
     }
 }
 
@@ -673,15 +640,13 @@ private fun DrawerItem(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    NavigationDrawerItem(
-        label = { Text(dest.label) },
+    NavigationDrawerItem(label = { Text(dest.label) },
         selected = currentRoute == dest.route,
         onClick = { onNavigate(dest.route) },
         icon = { Icon(dest.icon, contentDescription = dest.label) },
         modifier = modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
     )
 }
-
 
 private fun routeToTitle(route: String?): String = when (route) {
     AppDestination.Portfolio.route -> "Portafolio"
@@ -692,6 +657,8 @@ private fun routeToTitle(route: String?): String = when (route) {
     AppDestination.BetweenWallets.route -> "Entre Carteras"
     AppDestination.Swaps.route -> "Swaps"
     AppDestination.Admin.route -> "Setup Inicial"
+    AppDestination.AdminDeleteData.route -> "Eliminar datos"
+    AppDestination.AdminSetupCatalogs.route -> "Cargar catálogos"
     AppDestination.AdminCryptos.route -> "Cryptos"
     AppDestination.AdminWallets.route -> "Carteras"
     AppDestination.AdminFiat.route -> "FIAT"

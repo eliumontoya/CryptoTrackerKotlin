@@ -12,15 +12,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -30,7 +27,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,11 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import info.eliumontoyasadec.cryptotracker.ui.shell.LocalAppDeps
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminCryptosScreen(
-     onClose: () -> Unit
-) {
+ ) {
     val deps = LocalAppDeps.current
 
     val vm: AdminCryptosViewModel = viewModel(factory = AdminCryptosViewModelFactory(cryptoRepository= deps.cryptoRepository))
@@ -72,16 +66,7 @@ fun AdminCryptosScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Administración · Cryptos") },
-                navigationIcon = {
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        },
+
         floatingActionButton = {
             FloatingActionButton(onClick = { vm.openCreate(); state = vm.state }) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar crypto")
