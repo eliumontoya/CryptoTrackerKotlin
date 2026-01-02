@@ -219,6 +219,18 @@ class MoveBetweenWalletsUseCaseTest {
         override suspend fun delete(portfolioId: Long) {
             TODO("Not yet implemented")
         }
+
+        override suspend fun delete(portfolio: Portfolio) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun isDefault(portfolioId: Long): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun setDefault(portfolioId: Long) {
+            TODO("Not yet implemented")
+        }
     }
 
     private class FakeWalletRepository : WalletRepository {
@@ -243,7 +255,19 @@ class MoveBetweenWalletsUseCaseTest {
             TODO("Not yet implemented")
         }
 
+        override suspend fun update(walletId: Long, name: String) {
+            TODO("Not yet implemented")
+        }
+
         override suspend fun delete(walletId: Long) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun isMain(walletId: Long): Boolean {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun setMain(walletId: Long) {
             TODO("Not yet implemented")
         }
     }
@@ -260,6 +284,14 @@ class MoveBetweenWalletsUseCaseTest {
         }
 
         override suspend fun findBySymbol(symbol: String): Crypto? {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun upsertOne(item: Crypto) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun deleteBySymbol(symbol: String): Int {
             TODO("Not yet implemented")
         }
     }

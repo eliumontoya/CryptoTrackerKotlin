@@ -41,6 +41,18 @@ class FakePortfolioRepo(private val exists: Boolean = true) : PortfolioRepositor
     override suspend fun delete(portfolioId: Long) {
         TODO("Not yet implemented")
     }
+
+    override suspend fun delete(portfolio: Portfolio) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun isDefault(portfolioId: Long): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun setDefault(portfolioId: Long) {
+        TODO("Not yet implemented")
+    }
 }
 
 class FakeWalletRepo(
@@ -65,7 +77,19 @@ class FakeWalletRepo(
         TODO("Not yet implemented")
     }
 
+    override suspend fun update(walletId: Long, name: String) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun delete(walletId: Long) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun isMain(walletId: Long): Boolean {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun setMain(walletId: Long) {
         TODO("Not yet implemented")
     }
 }
@@ -81,6 +105,14 @@ class FakeCryptoRepo(private val exists: Boolean = true) : CryptoRepository {
     }
 
     override suspend fun findBySymbol(symbol: String): Crypto? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun upsertOne(item: Crypto) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun deleteBySymbol(symbol: String): Int {
         TODO("Not yet implemented")
     }
 }
