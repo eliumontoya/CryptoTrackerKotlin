@@ -5,8 +5,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import info.eliumontoyasadec.cryptotracker.domain.interactor.fiat.DeleteFiatCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.fiat.DeleteFiatUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.fiat.GetAllFiatsUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.fiat.UpsertFiatCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.fiat.UpsertFiatResult
+import info.eliumontoyasadec.cryptotracker.domain.interactor.fiat.UpsertFiatUseCase
 import info.eliumontoyasadec.cryptotracker.domain.model.Fiat
-import info.eliumontoyasadec.cryptotracker.domain.repositories.FiatRepository
 import kotlinx.coroutines.launch
 
 data class AdminFiatState(
@@ -24,7 +29,9 @@ data class AdminFiatState(
 )
 
 class AdminFiatViewModel(
-    private val repo: FiatRepository
+    private val getAllFiats: GetAllFiatsUseCase,
+    private val upsertFiat: UpsertFiatUseCase,
+    private val deleteFiat: DeleteFiatUseCase
 ) : ViewModel() {
 
     var state by mutableStateOf(AdminFiatState())
@@ -33,16 +40,16 @@ class AdminFiatViewModel(
     fun load() {
         viewModelScope.launch {
             state = state.copy(loading = true, error = null)
-            val items = try {
-                repo.getAll()
+            try {
+                val items = getAllFiats.execute()
+                state = state.copy(items = items)
             } catch (t: Throwable) {
-                state = state.copy(loading = false, error = t.message ?: "Fallo desconocido")
-                return@launch
+                state = state.copy(error = t.message ?: "Fallo desconocido")
+            } finally {
+                state = state.copy(loading = false)
             }
-            state = state.copy(items = items, loading = false)
         }
     }
-
     fun openCreate() {
         state = state.copy(showForm = true, editing = null, error = null)
     }
@@ -56,30 +63,35 @@ class AdminFiatViewModel(
     }
 
     fun save(code: String, name: String, symbol: String) {
-        val c = code.trim()
-        val n = name.trim()
-         val s = symbol.trim().takeIf { it.isNotBlank() }
-
-        if (c.isBlank()) {
-            state = state.copy(error = "El código no puede estar vacío")
-            return
-        }
-        if (n.isBlank()) {
-            state = state.copy(error = "El nombre no puede estar vacío")
-            return
-        }
+        val isEditing = state.editing != null
 
         viewModelScope.launch {
             state = state.copy(loading = true, error = null)
-            try {
-                repo.upsert(Fiat(code = c, name = n, symbol = s ?: ""))
-                val items = repo.getAll()
-                state = state.copy(items = items,  showForm = false, editing = null)
-            } catch (t: Throwable) {
-                state = state.copy(  error = t.message ?: "Fallo desconocido")
-            }finally {
-                state = state.copy(loading = false)
+
+            when (val result = upsertFiat.execute(
+                UpsertFiatCommand(
+                    codeRaw = code,
+                    nameRaw = name,
+                    symbolRaw = symbol,
+                    isEditing = isEditing
+                )
+            )) {
+                is UpsertFiatResult.Success -> {
+                    state = state.copy(
+                        items = result.items,
+                        showForm = false,
+                        editing = null
+                    )
+                }
+                is UpsertFiatResult.ValidationError -> {
+                    state = state.copy(error = result.message)
+                }
+                is UpsertFiatResult.Failure -> {
+                    state = state.copy(error = result.message)
+                }
             }
+
+            state = state.copy(loading = false)
         }
     }
 
@@ -93,22 +105,21 @@ class AdminFiatViewModel(
 
     fun confirmDelete() {
         val target = state.pendingDelete ?: return
+
         viewModelScope.launch {
             state = state.copy(loading = true, error = null)
-            try {
-                repo.delete(target.code)
-                val items = repo.getAll()
-                state = state.copy(
-                    items = items,
-                     showDeleteConfirm = false,
-                    pendingDelete = null
-                )
-            } catch (t: Throwable) {
-                state = state.copy(  error = t.message ?: "Fallo desconocido")
-            }finally {
-                state = state.copy(loading = false)
+
+            val result = deleteFiat.execute(DeleteFiatCommand(target.code))
+            state = when (result) {
+                is info.eliumontoyasadec.cryptotracker.domain.interactor.fiat.DeleteFiatResult.Deleted ->
+                    state.copy(items = result.items, showDeleteConfirm = false, pendingDelete = null)
+                is info.eliumontoyasadec.cryptotracker.domain.interactor.fiat.DeleteFiatResult.NotFound ->
+                    state.copy(items = result.items, showDeleteConfirm = false, pendingDelete = null)
+                is info.eliumontoyasadec.cryptotracker.domain.interactor.fiat.DeleteFiatResult.Failure ->
+                    state.copy(items = result.items, showDeleteConfirm = false, pendingDelete = null, error = result.message)
             }
 
+            state = state.copy(loading = false)
         }
     }
 }
