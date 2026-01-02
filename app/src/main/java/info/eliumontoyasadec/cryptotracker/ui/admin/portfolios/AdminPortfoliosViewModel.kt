@@ -5,9 +5,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.CreatePortfolioCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.CreatePortfolioResult
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.CreatePortfolioUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.DeletePortfolioCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.DeletePortfolioResult
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.DeletePortfolioUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.GetAllPortfoliosUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.SetDefaultPortfolioCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.SetDefaultPortfolioResult
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.SetDefaultPortfolioUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.UpdatePortfolioCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.UpdatePortfolioResult
+import info.eliumontoyasadec.cryptotracker.domain.interactor.portfolio.UpdatePortfolioUseCase
 import info.eliumontoyasadec.cryptotracker.domain.model.Portfolio
-import info.eliumontoyasadec.cryptotracker.domain.repositories.PortfolioRepository
-import kotlinx.coroutines.launch
+ import kotlinx.coroutines.launch
 
 data class AdminPortfoliosUiState(
     val loading: Boolean = false,
@@ -16,8 +28,12 @@ data class AdminPortfoliosUiState(
 )
 
 class AdminPortfoliosViewModel(
-    private val repo: PortfolioRepository
-) : ViewModel() {
+    private val getAll: GetAllPortfoliosUseCase,
+    private val createPortfolio: CreatePortfolioUseCase,
+    private val updatePortfolio: UpdatePortfolioUseCase,
+    private val deletePortfolio: DeletePortfolioUseCase,
+    private val setDefaultPortfolio: SetDefaultPortfolioUseCase
+ ) : ViewModel() {
 
     var state by mutableStateOf(AdminPortfoliosUiState())
         private set
@@ -26,13 +42,10 @@ class AdminPortfoliosViewModel(
         viewModelScope.launch {
             state = state.copy(loading = true, error = null)
             try {
-                state = state.copy(items = repo.getAll(), loading = false)
+                state = state.copy(items = getAll.execute())
             } catch (t: Throwable) {
-                state = state.copy(
-                    loading = false,
-                    error = t.message ?: "Fallo desconocido"
-                )
-            }finally {
+                state = state.copy(error = t.message ?: "Fallo desconocido")
+            } finally {
                 state = state.copy(loading = false)
             }
         }
@@ -46,24 +59,30 @@ class AdminPortfoliosViewModel(
     ) {
         viewModelScope.launch {
             state = state.copy(loading = true, error = null)
-            try {
-                repo.insert(
-                    Portfolio(
-                    name = name,
-                    description = description,
-                    isDefault = makeDefault
-                    )
+
+            when (val result = createPortfolio.execute(
+                CreatePortfolioCommand(
+                    nameRaw = name,
+                    descriptionRaw = description,
+                    makeDefault = makeDefault
                 )
-                state = state.copy(items = repo.getAll(), loading = false)
-                onDone()
-            } catch (t: Throwable) {
-                state = state.copy(
-                    loading = false,
-                    error = t.message ?: "Fallo desconocido"
-                )
+            )) {
+                is CreatePortfolioResult.Success -> {
+                    state = state.copy(items = result.items)
+                    onDone()
+                }
+                is CreatePortfolioResult.ValidationError -> {
+                    state = state.copy(error = result.message)
+                }
+                is CreatePortfolioResult.Failure -> {
+                    state = state.copy(error = result.message)
+                }
             }
+
+            state = state.copy(loading = false)
         }
     }
+
 
     fun update(
         id: Long,
@@ -74,62 +93,65 @@ class AdminPortfoliosViewModel(
     ) {
         viewModelScope.launch {
             state = state.copy(loading = true, error = null)
-            try {
-                repo.update(
-                    Portfolio(
-                    portfolioId = id,
-                    name = name,
-                    description = description,
-                    isDefault = makeDefault)
+
+            when (val result = updatePortfolio.execute(
+                UpdatePortfolioCommand(
+                    id = id,
+                    nameRaw = name,
+                    descriptionRaw = description,
+                    makeDefault = makeDefault
                 )
-                state = state.copy(items = repo.getAll(), loading = false)
-                onDone()
-            } catch (t: Throwable) {
-                state = state.copy(
-                    loading = false,
-                    error = t.message ?: "Fallo desconocido"
-                )
+            )) {
+                is UpdatePortfolioResult.Success -> {
+                    state = state.copy(items = result.items)
+                    onDone()
+                }
+                is UpdatePortfolioResult.ValidationError -> {
+                    state = state.copy(error = result.message)
+                }
+                is UpdatePortfolioResult.Failure -> {
+                    state = state.copy(error = result.message)
+                }
             }
+
+            state = state.copy(loading = false)
         }
     }
-
     fun delete(
         id: Long,
         onDone: () -> Unit
     ) {
         viewModelScope.launch {
             state = state.copy(loading = true, error = null)
-            try {
-                repo.delete(id)
-                state = state.copy(items = repo.getAll(), loading = false)
-                onDone()
-            } catch (t: Throwable) {
-                state = state.copy(
-                    loading = false,
-                    error = t.message ?: "Fallo desconocido"
-                )
+
+            when (val result = deletePortfolio.execute(DeletePortfolioCommand(id))) {
+                is DeletePortfolioResult.Success -> {
+                    state = state.copy(items = result.items)
+                    onDone()
+                }
+                is DeletePortfolioResult.Failure -> {
+                    state = state.copy(items = result.items, error = result.message)
+                }
             }
+
+            state = state.copy(loading = false)
         }
     }
-
-    fun setDefault(
-        id: Long
-    ) {
+    fun setDefault(id: Long) {
         viewModelScope.launch {
             state = state.copy(loading = true, error = null)
-            try {
-                // Si el repo ya valida “si ya es default, no hace nada”, mejor.
-                repo.setDefault(id)
-                state = state.copy(items = repo.getAll() )
-            } catch (t: Throwable) {
-                state = state.copy(
-                     error = t.message ?: "Fallo desconocido"
-                )
+
+            val newState = when (
+                val result = setDefaultPortfolio.execute(SetDefaultPortfolioCommand(id))
+            ) {
+                is SetDefaultPortfolioResult.Success ->
+                    state.copy(items = result.items)
+
+                is SetDefaultPortfolioResult.Failure ->
+                    state.copy(error = result.message)
             }
-            finally {
-                state = state.copy( loading = false)
-            }
+
+            state = newState.copy(loading = false)
         }
     }
-
 }
