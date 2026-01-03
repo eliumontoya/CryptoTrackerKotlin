@@ -1,4 +1,4 @@
-package info.eliumontoyasadec.cryptotracker.ui.admin.cryptos
+package info.eliumontoyasadec.cryptotracker.ui.admin
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

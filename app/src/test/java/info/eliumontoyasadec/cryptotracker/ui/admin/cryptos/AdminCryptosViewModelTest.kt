@@ -8,7 +8,8 @@ import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.UpsertCrypto
 import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.UpsertCryptoResult
 import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.UpsertCryptoUseCase
 import info.eliumontoyasadec.cryptotracker.domain.model.Crypto
-import io.mockk.coEvery
+ import info.eliumontoyasadec.cryptotracker.ui.admin.MainDispatcherRule
+ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
