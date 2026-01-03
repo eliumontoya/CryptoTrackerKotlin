@@ -7,7 +7,9 @@ import info.eliumontoyasadec.cryptotracker.domain.repositories.CryptoRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.FiatRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.WalletRepository
 
-class NoOpWalletRepository : WalletRepository {
+class NoOpWalletRepository (
+    initial: List<Wallet> = emptyList()
+) : WalletRepository {
     override suspend fun exists(walletId: Long): Boolean = false
     override suspend fun belongsToPortfolio(walletId: Long, portfolioId: Long): Boolean {
         TODO("Not yet implemented")

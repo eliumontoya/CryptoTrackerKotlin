@@ -19,6 +19,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -36,15 +37,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import info.eliumontoyasadec.cryptotracker.domain.model.Portfolio
 import info.eliumontoyasadec.cryptotracker.domain.model.Wallet
 import info.eliumontoyasadec.cryptotracker.ui.shell.LocalAppDeps
 
+private const val TAG_SCREEN = "admin_wallets_screen"
+private const val TAG_LIST = "admin_wallets_list"
+private const val TAG_FAB_ADD = "admin_wallet_add_fab"
+private const val TAG_PORTFOLIO_PICKER = "admin_wallet_portfolio_picker"
+private const val TAG_EMPTY = "admin_wallet_empty"
+
+private const val TAG_EDITOR_DIALOG = "admin_wallet_editor_dialog"
+private const val TAG_EDITOR_NAME = "admin_wallet_editor_name"
+private const val TAG_EDITOR_MAKE_MAIN = "admin_wallet_editor_make_main"
+private const val TAG_EDITOR_SAVE = "admin_wallet_editor_save"
+private const val TAG_EDITOR_CANCEL = "admin_wallet_editor_cancel"
 
 @Composable
-fun AdminWalletsScreen(
-) {
+fun AdminWalletsScreen() {
     val deps = LocalAppDeps.current
 
     val vm: AdminWalletsViewModel = viewModel(
@@ -59,9 +72,11 @@ fun AdminWalletsScreen(
     val state = vm.state
 
     Scaffold(
-
         floatingActionButton = {
-            FloatingActionButton(onClick = { vm.openCreate() }) {
+            FloatingActionButton(
+                onClick = { vm.openCreate() },
+                modifier = Modifier.testTag(TAG_FAB_ADD)
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Crear cartera")
             }
         },
@@ -71,6 +86,7 @@ fun AdminWalletsScreen(
                 .padding(padding)
                 .fillMaxSize()
                 .padding(16.dp)
+                .testTag(TAG_SCREEN)
         ) {
             if (state.error != null) {
                 Text(
@@ -92,14 +108,20 @@ fun AdminWalletsScreen(
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(12.dp))
             }
+
             if (!state.loading && state.items.isEmpty()) {
                 Text(
                     text = "Aún no hay carteras para este portafolio.",
-                    modifier = Modifier.padding(12.dp)
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .testTag(TAG_EMPTY)
                 )
             }
+
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(TAG_LIST),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(state.items, key = { it.walletId }) { item ->
@@ -130,7 +152,7 @@ fun AdminWalletsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PortfolioPicker(
-    portfolios: List<info.eliumontoyasadec.cryptotracker.domain.model.Portfolio>,
+    portfolios: List<Portfolio>,
     selectedId: Long?,
     onSelect: (Long) -> Unit
 ) {
@@ -146,10 +168,13 @@ private fun PortfolioPicker(
             onValueChange = {},
             readOnly = true,
             label = { Text("Portafolio") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth()
+                .testTag(TAG_PORTFOLIO_PICKER)
         )
+
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
@@ -160,7 +185,9 @@ private fun PortfolioPicker(
                     onClick = {
                         expanded = false
                         onSelect(p.portfolioId)
-                    }
+                    },
+                    modifier = Modifier.testTag("admin_wallet_portfolio_item_${p.portfolioId}")
+
                 )
             }
         }
@@ -174,14 +201,23 @@ private fun WalletRow(
     onDelete: () -> Unit,
     onMakeMain: () -> Unit
 ) {
-    Card {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("admin_wallet_item_${item.walletId}")
+    ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(item.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        item.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.testTag("admin_wallet_name_${item.walletId}")
+                    )
                     Text(
                         if (item.isMain) "Principal (isMain)" else "No principal",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.testTag("admin_wallet_status_${item.walletId}")
                     )
                 }
 
@@ -189,6 +225,7 @@ private fun WalletRow(
                     text = "Editar",
                     modifier = Modifier
                         .padding(start = 12.dp)
+                        .testTag("admin_wallet_edit_${item.walletId}")
                         .clickable { onEdit() }
                 )
 
@@ -196,6 +233,7 @@ private fun WalletRow(
                     text = "Eliminar",
                     modifier = Modifier
                         .padding(start = 12.dp)
+                        .testTag("admin_wallet_delete_${item.walletId}")
                         .clickable { onDelete() }
                 )
             }
@@ -204,7 +242,9 @@ private fun WalletRow(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = "Hacer principal",
-                    modifier = Modifier.clickable { onMakeMain() }
+                    modifier = Modifier
+                        .testTag("admin_wallet_make_main_${item.walletId}")
+                        .clickable { onMakeMain() }
                 )
             }
         }
@@ -222,18 +262,27 @@ private fun WalletEditorDialog(
     onSave: () -> Unit
 ) {
     AlertDialog(
+        modifier = Modifier.testTag(TAG_EDITOR_DIALOG),
         onDismissRequest = onDismiss,
         title = { Text(if (isEdit) "Editar cartera" else "Crear cartera") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = onNameChange,
                     label = { Text("Nombre") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(TAG_EDITOR_NAME)
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.testTag(TAG_EDITOR_MAKE_MAIN)
+                ) {
                     Switch(checked = makeMain, onCheckedChange = onMakeMainChange)
                     Spacer(Modifier.width(8.dp))
                     Text("Marcar como principal (isMain)")
@@ -241,10 +290,16 @@ private fun WalletEditorDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onSave) { Text("Guardar") }
+            TextButton(
+                onClick = onSave,
+                modifier = Modifier.testTag(TAG_EDITOR_SAVE)
+            ) { Text("Guardar") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(TAG_EDITOR_CANCEL)
+            ) { Text("Cancelar") }
         }
     )
 }
