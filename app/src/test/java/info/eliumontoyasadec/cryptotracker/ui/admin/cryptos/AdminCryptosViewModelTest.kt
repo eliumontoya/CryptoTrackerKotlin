@@ -13,13 +13,15 @@ import info.eliumontoyasadec.cryptotracker.domain.model.Crypto
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.test.advanceUntilIdle
+ import kotlinx.coroutines.ExperimentalCoroutinesApi
+ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class AdminCryptosViewModelTest {
 
     @get:Rule

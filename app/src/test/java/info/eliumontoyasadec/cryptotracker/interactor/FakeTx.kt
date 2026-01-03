@@ -141,7 +141,7 @@ class FakeMovementRepo : MovementRepository {
     override suspend fun insert(movement: Movement): Long {
         val id = System.currentTimeMillis()
 
-        val movement = Movement(
+        val movementNew = Movement(
             id = id,
             portfolioId = movement.portfolioId,
             walletId = movement.walletId,
@@ -155,8 +155,8 @@ class FakeMovementRepo : MovementRepository {
             groupId = movement.groupId
         )
 
-        store[id] = movement
-        lastInserted = movement
+        store[id] = movementNew
+        lastInserted = movementNew
 
         return id
     }

@@ -1,4 +1,4 @@
-package info.eliumontoyasadec.cryptotracker.interactor.crypto
+package info.eliumontoyasadec.cryptotracker.interactor
 
 import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.DeleteCryptoCommand
 import info.eliumontoyasadec.cryptotracker.domain.interactor.crypto.DeleteCryptoResult
