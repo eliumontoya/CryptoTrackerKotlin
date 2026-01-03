@@ -43,7 +43,22 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import info.eliumontoyasadec.cryptotracker.domain.model.Portfolio
 import info.eliumontoyasadec.cryptotracker.ui.shell.LocalAppDeps
+import androidx.compose.ui.platform.testTag
 
+private const val TAG_ADD_FAB = "admin_portfolios_add_fab"
+private const val TAG_LIST = "admin_portfolios_list"
+private const val TAG_EMPTY = "admin_portfolios_empty"
+
+private const val TAG_FORM_NAME = "admin_portfolios_form_name"
+private const val TAG_FORM_DESC = "admin_portfolios_form_desc"
+private const val TAG_FORM_DEFAULT = "admin_portfolios_form_default"
+private const val TAG_FORM_SAVE = "admin_portfolios_form_save"
+
+private fun tagRow(id: Long) = "admin_portfolios_row_$id"
+private fun tagDelete(id: Long) = "admin_portfolios_delete_$id"
+private fun tagEdit(id: Long) = "admin_portfolios_edit_$id"
+private fun tagMakeDefault(id: Long) = "admin_portfolios_make_default_$id"
+private fun tagDefaultBadge(id: Long) = "admin_portfolios_default_badge_$id"
 @Composable
 fun AdminPortfoliosScreen(
 ) {
@@ -69,6 +84,8 @@ fun AdminPortfoliosScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
+                modifier = Modifier.testTag(TAG_ADD_FAB),
+
                 onClick = {
                     vm.openCreate()
                 }
@@ -97,12 +114,14 @@ fun AdminPortfoliosScreen(
             if (state.items.isEmpty() && !state.loading) {
                 Text(
                     "No hay portafolios todavía. Crea el primero con el botón +.",
+                    modifier = Modifier.testTag(TAG_EMPTY),
+
                     style = MaterialTheme.typography.bodyMedium
                 )
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().testTag(TAG_LIST),
                 ) {
                     items(state.items, key = { it.portfolioId }) { p ->
                         PortfolioRow(
@@ -169,6 +188,7 @@ private fun PortfolioRow(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .testTag(tagRow(portfolio.portfolioId))
             .clickable { onEdit() }
     ) {
         Row(
@@ -182,7 +202,9 @@ private fun PortfolioRow(
                     Text(portfolio.name, style = MaterialTheme.typography.titleMedium)
                     if (portfolio.isDefault) {
                         Spacer(Modifier.padding(horizontal = 6.dp))
-                        Text("• Default", style = MaterialTheme.typography.bodySmall)
+                        Text("• Default",
+                            modifier = Modifier.testTag(tagDefaultBadge(portfolio.portfolioId)),
+                            style = MaterialTheme.typography.bodySmall)
                     }
                 }
 
@@ -192,15 +214,18 @@ private fun PortfolioRow(
                 }
             }
             if (!portfolio.isDefault) {
-                TextButton(onClick = onMakeDefault) {
+                TextButton(  modifier = Modifier.testTag(tagMakeDefault(portfolio.portfolioId)),
+                    onClick = onMakeDefault) {
                     Text("Hacer default")
                 }
             }
 
-            IconButton(onClick = onEdit) {
+            IconButton(  modifier = Modifier.testTag(tagEdit(portfolio.portfolioId)),
+                onClick = onEdit) {
                 Icon(Icons.Filled.Edit, contentDescription = "Editar")
             }
-            IconButton(onClick = onDelete) {
+            IconButton(  modifier = Modifier.testTag(tagDelete(portfolio.portfolioId)),
+                onClick = onDelete) {
                 Icon(Icons.Filled.Delete, contentDescription = "Eliminar")
             }
         }
@@ -230,14 +255,14 @@ private fun PortfolioFormDialog(
                     label = { Text("Nombre") },
                     singleLine = true,
                     isError = name.isNotBlank() && !isValid,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().testTag(TAG_FORM_NAME),
                 )
 
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Descripción (opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag(TAG_FORM_DESC),
                     minLines = 2
                 )
 
@@ -248,6 +273,7 @@ private fun PortfolioFormDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
+                        modifier = Modifier.testTag(TAG_FORM_DEFAULT),
                         checked = makeDefault,
                         onCheckedChange = { makeDefault = it }
                     )
@@ -257,7 +283,8 @@ private fun PortfolioFormDialog(
             }
         },
         confirmButton = {
-            Button(
+            Button(  modifier = Modifier.testTag(TAG_FORM_SAVE),
+
                 onClick = {
                     val desc = description.trim().takeIf { it.isNotEmpty() }
                     onSave(name.trim(), desc, makeDefault)

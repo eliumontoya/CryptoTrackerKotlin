@@ -4,6 +4,10 @@ plugins {
     id("com.google.devtools.ksp")
  }
 
+configurations.matching { it.name.contains("androidTest", ignoreCase = true) }.configureEach {
+    exclude(group = "org.junit.jupiter")
+    exclude(group = "org.junit.platform")
+}
 
 android {
     namespace = "info.eliumontoyasadec.cryptotracker"
@@ -123,4 +127,6 @@ dependencies {
      androidTestImplementation("androidx.test:runner:1.5.2")
 
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    //androidTestImplementation("androidx.tracing:tracing:1.2.0")
+   // androidTestImplementation("io.mockk:mockk-android:1.13.12")
 }
