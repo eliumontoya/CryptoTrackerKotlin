@@ -4,4 +4,6 @@ data class CreatePortfolioCommand(
     val nameRaw: String,
     val descriptionRaw: String?,
     val makeDefault: Boolean
-)
+){
+    constructor(  nameRaw: String) : this(nameRaw,"",false)
+}
