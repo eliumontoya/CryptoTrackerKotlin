@@ -54,12 +54,6 @@ fun AdminPortfoliosScreen(
 
     val state = vm.state
 
-    var showForm by remember { mutableStateOf(false) }
-    var editing by remember { mutableStateOf<Portfolio?>(null) }
-
-    var showDeleteConfirm by remember { mutableStateOf(false) }
-    var deleting by remember { mutableStateOf<Portfolio?>(null) }
-
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -73,12 +67,10 @@ fun AdminPortfoliosScreen(
     }
 
     Scaffold(
-
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    editing = null
-                    showForm = true
+                    vm.openCreate()
                 }
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Crear portafolio")
@@ -116,15 +108,12 @@ fun AdminPortfoliosScreen(
                         PortfolioRow(
                             portfolio = p,
                             onEdit = {
-                                editing = p
-                                showForm = true
+                                vm.openEdit(p)
                             },
                             onDelete = {
-                                deleting = p
-                                showDeleteConfirm = true
+                                vm.requestDelete(p)
                             },
                             onMakeDefault = { vm.setDefault(p.portfolioId) }
-
                         )
                     }
                 }
@@ -132,45 +121,21 @@ fun AdminPortfoliosScreen(
         }
     }
 
-    if (showForm) {
+    if (state.showForm) {
         PortfolioFormDialog(
-            initial = editing,
-            onDismiss = {
-                showForm = false
-                editing = null
-            },
+            initial = state.editing,
+            onDismiss = { vm.dismissForm() },
             onSave = { name, description, makeDefault ->
-                if (editing == null) {
-                    vm.create(
-                        name = name,
-                        description = description,
-                        makeDefault = makeDefault
-                    ) {
-                        showForm = false
-                        editing = null
-                    }
-                } else {
-                    val target = editing!!
-                    vm.update(
-                        id = target.portfolioId,
-                        name = name,
-                        description = description,
-                        makeDefault = makeDefault
-                    ) {
-                        showForm = false
-                        editing = null
-                    }
-                }
+                vm.save(name = name, description = description, makeDefault = makeDefault)
             }
         )
     }
 
-    if (showDeleteConfirm) {
-        val target = deleting
+    if (state.showDeleteConfirm) {
+        val target = state.pendingDelete
         AlertDialog(
             onDismissRequest = {
-                showDeleteConfirm = false
-                deleting = null
+                vm.cancelDelete()
             },
             title = { Text("Eliminar portafolio") },
             text = {
@@ -179,19 +144,14 @@ fun AdminPortfoliosScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        val p = deleting ?: return@Button
-                        vm.delete(p.portfolioId) {
-                            showDeleteConfirm = false
-                            deleting = null
-                        }
+                        vm.confirmDelete()
                     }
                 ) { Text("Eliminar") }
             },
             dismissButton = {
                 TextButton(
                     onClick = {
-                        showDeleteConfirm = false
-                        deleting = null
+                        vm.cancelDelete()
                     }
                 ) { Text("Cancelar") }
             }
@@ -205,7 +165,6 @@ private fun PortfolioRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onMakeDefault: () -> Unit
-
 ) {
     Card(
         modifier = Modifier
