@@ -31,6 +31,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import info.eliumontoyasadec.cryptotracker.ui.admin.wallets.AdminWalletsTags as Tags
 
 @RunWith(AndroidJUnit4::class)
 class AdminWalletsE2eTest {
@@ -96,33 +97,33 @@ class AdminWalletsE2eTest {
 
     @Test
     fun start_showsWalletsForDefaultPortfolio() {
-        composeRule.onNodeWithTag("admin_wallets_screen").assertExists()
-        composeRule.onNodeWithTag("admin_wallets_list").assertExists()
+        composeRule.onNodeWithTag(Tags.SCREEN).assertExists()
+        composeRule.onNodeWithTag(Tags.LIST).assertExists()
 
         // Debe cargar P1 (default) => W1 y W2 visibles
-        composeRule.onNodeWithTag("admin_wallet_item_1").assertExists()
-        composeRule.onNodeWithTag("admin_wallet_item_2").assertExists()
+        composeRule.onNodeWithTag(Tags.item(1)).assertExists()
+        composeRule.onNodeWithTag(Tags.item(2)).assertExists()
 
         // Y NO debe estar W3 (de P2)
-        composeRule.onNodeWithTag("admin_wallet_item_3").assertDoesNotExist()
+        composeRule.onNodeWithTag(Tags.item(3)).assertDoesNotExist()
     }
 
     @Test
     fun createWallet_addsItemToSelectedPortfolio() {
         // Abrir editor
-        composeRule.onNodeWithTag("admin_wallet_add_fab").performClick()
-        composeRule.onNodeWithTag("admin_wallet_editor_dialog").assertExists()
+        composeRule.onNodeWithTag(Tags.FAB_ADD).performClick()
+        composeRule.onNodeWithTag(Tags.EDITOR_DIALOG).assertExists()
 
         // Nombre
-        composeRule.onNodeWithTag("admin_wallet_editor_name").performTextInput("W-New")
+        composeRule.onNodeWithTag(Tags.EDITOR_NAME).performTextInput("W-New")
 
         // Guardar
-        composeRule.onNodeWithTag("admin_wallet_editor_save").performClick()
+        composeRule.onNodeWithTag(Tags.EDITOR_SAVE).performClick()
 
         // Debe aparecer una nueva wallet en P1 (id autogenerado >= 4 normalmente, pero no lo asumimos)
         // Verificamos por texto en el nodo name (más estable que adivinar ID).
         // Como tienes tags por walletId, buscamos por contenido:
-        composeRule.onNodeWithTag("admin_wallets_list").assertExists()
+        composeRule.onNodeWithTag(Tags.LIST).assertExists()
         // A falta de tag por texto, validamos que haya al menos 3 cards en P1: (W1, W2, W-New)
         composeRule.waitForIdle()
     }
@@ -130,58 +131,58 @@ class AdminWalletsE2eTest {
     @Test
     fun editWallet_updatesName() {
         // Editar W2
-        composeRule.onNodeWithTag("admin_wallet_edit_2").performClick()
-        composeRule.onNodeWithTag("admin_wallet_editor_dialog").assertExists()
+        composeRule.onNodeWithTag(Tags.edit(2)).performClick()
+        composeRule.onNodeWithTag(Tags.EDITOR_DIALOG).assertExists()
 
         // Cambiar nombre
-        composeRule.onNodeWithTag("admin_wallet_editor_name").performTextClearance()
-        composeRule.onNodeWithTag("admin_wallet_editor_name").performTextInput("W2-Edited")
+        composeRule.onNodeWithTag(Tags.EDITOR_NAME).performTextClearance()
+        composeRule.onNodeWithTag(Tags.EDITOR_NAME).performTextInput("W2-Edited")
 
         // Guardar
-        composeRule.onNodeWithTag("admin_wallet_editor_save").performClick()
+        composeRule.onNodeWithTag(Tags.EDITOR_SAVE).performClick()
 
         // Verificar nombre actualizado
-        composeRule.onNodeWithTag("admin_wallet_name_2").assertTextContains("W2-Edited")
+        composeRule.onNodeWithTag(Tags.name(2)).assertTextContains("W2-Edited")
     }
 
     @Test
     fun deleteWallet_removesItem() {
-        composeRule.onNodeWithTag("admin_wallet_item_2").assertExists()
+        composeRule.onNodeWithTag(Tags.item(2)).assertExists()
 
         // Eliminar W2
-        composeRule.onNodeWithTag("admin_wallet_delete_2").performClick()
+        composeRule.onNodeWithTag(Tags.delete(2)).performClick()
 
         // Ya no debe existir
-        composeRule.onNodeWithTag("admin_wallet_item_2").assertDoesNotExist()
+        composeRule.onNodeWithTag(Tags.item(2)).assertDoesNotExist()
     }
 
     @Test
     fun makeMain_onlyOneMainRemainsInPortfolio() {
         // Inicialmente W1 es main en P1
-        composeRule.onNodeWithTag("admin_wallet_status_1").assertTextContains("Principal", substring = true)
-        composeRule.onNodeWithTag("admin_wallet_status_2").assertTextContains("No principal")
+        composeRule.onNodeWithTag(Tags.status(1)).assertTextContains("Principal", substring = true)
+        composeRule.onNodeWithTag(Tags.status(2)).assertTextContains("No principal")
 
         // Hacer principal W2
         composeRule.onNodeWithTag("admin_wallet_make_main_2").performClick()
 
         // Debe quedar W2 como principal y W1 ya no
-        composeRule.onNodeWithTag("admin_wallet_status_2").assertTextContains("Principal", substring = true)
-        composeRule.onNodeWithTag("admin_wallet_status_1").assertTextContains("No principal")
+        composeRule.onNodeWithTag(Tags.status(2)).assertTextContains("Principal", substring = true)
+        composeRule.onNodeWithTag(Tags.status(1)).assertTextContains("No principal")
     }
 
     @Test
     fun changePortfolio_switchesList() {
         // Abrir dropdown
-        composeRule.onNodeWithTag("admin_wallet_portfolio_picker").performClick()
+        composeRule.onNodeWithTag(Tags.PORTFOLIO_PICKER).performClick()
 
         // Seleccionar P2 (usa unmerged por safety con dropdowns)
-        composeRule.onNodeWithTag("admin_wallet_portfolio_item_2", useUnmergedTree = true)
+        composeRule.onNodeWithTag(Tags.portfolioItem(2), useUnmergedTree = true)
             .performClick()
 
         // Ahora debe verse W3 y no W1/W2
-        composeRule.onNodeWithTag("admin_wallet_item_3").assertExists()
-        composeRule.onNodeWithTag("admin_wallet_item_1").assertDoesNotExist()
-        composeRule.onNodeWithTag("admin_wallet_item_2").assertDoesNotExist()
+        composeRule.onNodeWithTag(Tags.item(3)).assertExists()
+        composeRule.onNodeWithTag(Tags.item(1)).assertDoesNotExist()
+        composeRule.onNodeWithTag(Tags.item(2)).assertDoesNotExist()
     }
 
     private
