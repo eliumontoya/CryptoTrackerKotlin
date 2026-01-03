@@ -2,7 +2,8 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
-}
+ }
+
 
 android {
     namespace = "info.eliumontoyasadec.cryptotracker"
@@ -31,7 +32,7 @@ android {
             enableAndroidTestCoverage = true
 
             // Coverage para unit tests locales (src/test)
-            enableUnitTestCoverage = true
+            enableUnitTestCoverage = false
         }
     }
 
@@ -55,8 +56,10 @@ android {
     }
 
     testOptions {
+
         unitTests {
             isReturnDefaultValues = true
+
         }
     }
 
@@ -106,6 +109,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("androidx.arch.core:core-testing:2.2.0")
+    testImplementation("io.mockk:mockk:1.13.10")
+
 
     // Instrumentation tests
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

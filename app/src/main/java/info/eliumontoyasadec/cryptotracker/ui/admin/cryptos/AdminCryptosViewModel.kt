@@ -34,7 +34,6 @@ class AdminCryptosViewModel(
 ) : ViewModel() {
 
     var state: AdminCryptosState = AdminCryptosState()
-        private set
 
     fun load() {
         viewModelScope.launch {

@@ -5,4 +5,5 @@ data class Crypto(
     val name: String,          // Bitcoin
     val coingeckoId: String?,  // bitcoin
     val isActive: Boolean = true
-)
+){ constructor(symbol: String, name: String, isActive: Boolean) :
+        this(symbol, name, null, isActive)}
