@@ -35,7 +35,6 @@ class AdminFiatViewModel(
 ) : ViewModel() {
 
     var state by mutableStateOf(AdminFiatState())
-        private set
 
     fun load() {
         viewModelScope.launch {
