@@ -2,6 +2,7 @@ package info.eliumontoyasadec.cryptotracker.ui.admin.cryptos
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,17 +36,42 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import info.eliumontoyasadec.cryptotracker.ui.shell.LocalAppDeps
 
+object AdminCryptoTags {
+    const val SCREEN = "admin_crypto_screen"
+    const val LIST = "admin_crypto_list"
+    const val ADD = "admin_crypto_add"
+
+    fun item(symbol: String) = "admin_crypto_item_${symbol}"
+    fun edit(symbol: String) = "admin_crypto_edit_${symbol}"
+    fun delete(symbol: String) = "admin_crypto_delete_${symbol}"
+
+    const val EDITOR_DIALOG = "admin_crypto_editor_dialog"
+    const val SYMBOL_INPUT = "admin_crypto_symbol_input"
+    const val NAME_INPUT = "admin_crypto_name_input"
+    const val SAVE = "admin_crypto_save"
+    const val CANCEL = "admin_crypto_cancel"
+
+    const val DELETE_DIALOG = "admin_crypto_delete_dialog"
+    const val CONFIRM_DELETE = "admin_crypto_confirm_delete"
+    const val CANCEL_DELETE = "admin_crypto_cancel_delete"
+}
+
 @Composable
 fun AdminCryptosScreen(
- ) {
+) {
     val deps = LocalAppDeps.current
 
-    val vm: AdminCryptosViewModel = viewModel(factory = AdminCryptosViewModelFactory(cryptoRepository= deps.cryptoRepository))
+    val vm: AdminCryptosViewModel =
+        viewModel(factory = AdminCryptosViewModelFactory(cryptoRepository = deps.cryptoRepository))
     var state by remember { mutableStateOf(vm.state) }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -68,7 +94,8 @@ fun AdminCryptosScreen(
     Scaffold(
 
         floatingActionButton = {
-            FloatingActionButton(onClick = { vm.openCreate(); state = vm.state }) {
+            FloatingActionButton(modifier = Modifier.testTag(AdminCryptoTags.ADD),
+                onClick = { vm.openCreate(); state = vm.state }) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar crypto")
             }
         },
@@ -78,6 +105,8 @@ fun AdminCryptosScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+                .testTag(AdminCryptoTags.SCREEN)
+
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -99,14 +128,31 @@ fun AdminCryptosScreen(
                 )
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag(AdminCryptoTags.LIST),
+
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(state.items, key = { it.symbol }) { item ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp)
+                                 .clickable { vm.openEdit(item); state = vm.state }
+                                .semantics(mergeDescendants = true) {}
+
+                                .testTag(AdminCryptoTags.edit(item.symbol))
+                        ) {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { vm.openEdit(item); state = vm.state }
+                                .semantics(mergeDescendants = true) {
+                                    this[SemanticsProperties.Text] = listOf(AnnotatedString("${item.symbol} ${item.name}"))
+                                }
+
+                                .testTag(AdminCryptoTags.item(item.symbol))
+
                         ) {
                             Row(
                                 modifier = Modifier
@@ -127,11 +173,18 @@ fun AdminCryptosScreen(
 
                                 Spacer(Modifier.width(8.dp))
 
-                                TextButton(onClick = { vm.requestDelete(item.symbol); state = vm.state }) {
+                                TextButton(
+                                    modifier = Modifier.testTag(AdminCryptoTags.delete(item.symbol)),
+
+                                    onClick = { vm.requestDelete(item.symbol); state = vm.state }) {
                                     Text("Eliminar")
                                 }
                             }
                         }
+
+                        }
+
+
                     }
                 }
             }
@@ -141,12 +194,16 @@ fun AdminCryptosScreen(
     // Form dialog
     if (state.showForm) {
         AlertDialog(
+            modifier = Modifier.testTag(AdminCryptoTags.EDITOR_DIALOG),
+
             onDismissRequest = { vm.dismissForm(); state = vm.state },
             confirmButton = {
-                TextButton(onClick = { vm.save(); state = vm.state }) { Text("Guardar") }
+                TextButton(        modifier = Modifier.testTag(AdminCryptoTags.SAVE),
+                    onClick = { vm.save(); state = vm.state }) { Text("Guardar") }
             },
             dismissButton = {
-                TextButton(onClick = { vm.dismissForm(); state = vm.state }) { Text("Cancelar") }
+                TextButton(        modifier = Modifier.testTag(AdminCryptoTags.CANCEL),
+                    onClick = { vm.dismissForm(); state = vm.state }) { Text("Cancelar") }
             },
             title = { Text(if (state.isEditing) "Editar crypto" else "Crear crypto") },
             text = {
@@ -157,15 +214,21 @@ fun AdminCryptosScreen(
                         label = { Text("Símbolo") },
                         enabled = !state.isEditing,
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(AdminCryptoTags.SYMBOL_INPUT),
+
+                        )
                     OutlinedTextField(
                         value = state.draftName,
                         onValueChange = { vm.onDraftNameChange(it); state = vm.state },
                         label = { Text("Nombre") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(AdminCryptoTags.NAME_INPUT),
+
+                        )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -188,14 +251,18 @@ fun AdminCryptosScreen(
     // Delete confirm dialog
     state.pendingDeleteSymbol?.let { symbol ->
         AlertDialog(
+            modifier = Modifier.testTag(AdminCryptoTags.DELETE_DIALOG),
+
             onDismissRequest = { vm.cancelDelete(); state = vm.state },
             confirmButton = {
-                TextButton(onClick = { vm.confirmDelete(); state = vm.state }) {
+                TextButton(modifier = Modifier.testTag(AdminCryptoTags.CONFIRM_DELETE),
+                    onClick = { vm.confirmDelete(); state = vm.state }) {
                     Text("Eliminar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { vm.cancelDelete(); state = vm.state }) { Text("Cancelar") }
+                TextButton(modifier = Modifier.testTag(AdminCryptoTags.CANCEL_DELETE),
+                    onClick = { vm.cancelDelete(); state = vm.state }) { Text("Cancelar") }
             },
             title = { Text("Confirmar eliminación") },
             text = {
