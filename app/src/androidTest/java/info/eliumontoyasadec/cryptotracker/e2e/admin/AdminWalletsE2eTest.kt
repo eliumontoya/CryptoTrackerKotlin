@@ -16,7 +16,6 @@ import info.eliumontoyasadec.cryptotracker.data.seed.CatalogSeeder
 import info.eliumontoyasadec.cryptotracker.data.seed.DatabaseWiper
 import info.eliumontoyasadec.cryptotracker.domain.model.Portfolio
 import info.eliumontoyasadec.cryptotracker.domain.model.Wallet
-import info.eliumontoyasadec.cryptotracker.domain.repositories.WalletRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakePortfolioRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeWalletRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpCryptoRepository
