@@ -1,4 +1,5 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package info.eliumontoyasadec.cryptotracker.ui.screens.movements
 
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
@@ -92,14 +94,19 @@ fun MovementFormSheetContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .testTag(MovementTags.FormSheet),
+
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
             text = if (mode == MovementFormMode.CREATE) "Nuevo movimiento" else "Editar movimiento",
             style = MaterialTheme.typography.titleLarge
         )
-        Text("(sin wiring) Este formulario actualiza estado fake.", style = MaterialTheme.typography.bodySmall)
+        Text(
+            "(sin wiring) Este formulario actualiza estado fake.",
+            style = MaterialTheme.typography.bodySmall
+        )
 
         HorizontalDivider()
 
@@ -124,14 +131,18 @@ fun MovementFormSheetContent(
             options = MovementTypeUi.entries,
             selected = draft.type,
             labelOf = { it.label },
-            onSelect = { onChange(draft.copy(type = it)) }
+            onSelect = { onChange(draft.copy(type = it)) },
+            modifier = Modifier.testTag(MovementTags.FormTypeChips),
+            chipTagOf = { MovementTags.formTypeChip(it.name) }
         )
 
         OutlinedTextField(
             value = draft.quantityText,
             onValueChange = { onChange(draft.copy(quantityText = it)) },
             label = { Text("Cantidad") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(MovementTags.FormQuantity),
             singleLine = true,
             isError = !qtyOk,
             supportingText = {
@@ -145,7 +156,9 @@ fun MovementFormSheetContent(
             value = draft.priceText,
             onValueChange = { onChange(draft.copy(priceText = it)) },
             label = { Text("Precio (USD) - opcional") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(MovementTags.FormPrice),
             singleLine = true,
             isError = !priceOk,
             supportingText = {
@@ -157,7 +170,9 @@ fun MovementFormSheetContent(
             value = draft.feeQuantityText,
             onValueChange = { onChange(draft.copy(feeQuantityText = it)) },
             label = { Text("Fee (qty) - opcional") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(MovementTags.FormFee),
             singleLine = true,
             isError = !feeOk,
             supportingText = {
@@ -169,7 +184,9 @@ fun MovementFormSheetContent(
             value = draft.notes,
             onValueChange = { onChange(draft.copy(notes = it)) },
             label = { Text("Notas") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(MovementTags.FormNotes)
         )
 
         Row(
@@ -180,7 +197,10 @@ fun MovementFormSheetContent(
                 text = "Fecha: ${draft.dateLabel}",
                 style = MaterialTheme.typography.bodySmall
             )
-            OutlinedButton(onClick = { showDatePicker = true }) {
+            OutlinedButton(
+                onClick = { showDatePicker = true },
+                modifier = Modifier.testTag(MovementTags.FormPickDate)
+            ) {
                 Text("Elegir")
             }
         }
@@ -204,7 +224,8 @@ fun MovementFormSheetContent(
                     ) { Text("Aceptar") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                    TextButton(onClick = { showDatePicker = false }
+                    ) { Text("Cancelar") }
                 }
             ) {
                 DatePicker(state = datePickerState)
@@ -217,8 +238,15 @@ fun MovementFormSheetContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            TextButton(onClick = onCancel) { Text("Cancelar") }
-            Button(onClick = onSave, enabled = canSave) { Text("Guardar") }
+            TextButton(
+                onClick = onCancel,
+                modifier = Modifier.testTag(MovementTags.FormCancel)
+            ) { Text("Cancelar") }
+            Button(
+                onClick = onSave,
+                enabled = canSave,
+                modifier = Modifier.testTag(MovementTags.FormSave)
+            ) { Text("Guardar") }
         }
 
         Spacer(Modifier.height(12.dp))
@@ -230,11 +258,20 @@ private fun <T> ChipRow(
     options: List<T>,
     selected: T,
     labelOf: (T) -> String,
-    onSelect: (T) -> Unit
+    onSelect: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    chipTagOf: ((T) -> String)? = null
 ) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         items(options) { opt ->
+            val chipModifier =
+                chipTagOf?.let { Modifier.testTag(it(opt)) } ?: Modifier
+
             FilterChip(
+                modifier = chipModifier,
                 selected = opt == selected,
                 onClick = { onSelect(opt) },
                 label = { Text(labelOf(opt)) }

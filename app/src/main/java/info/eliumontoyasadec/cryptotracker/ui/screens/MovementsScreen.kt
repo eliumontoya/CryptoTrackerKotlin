@@ -1,8 +1,10 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package info.eliumontoyasadec.cryptotracker.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,15 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -29,22 +33,23 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.ui.text.input.ImeAction
- import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.HorizontalDivider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementTags
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementTypeUi
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapFormSheetContent
@@ -124,6 +129,8 @@ fun MovementsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .testTag(MovementTags.Screen)
+
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -134,15 +141,15 @@ fun MovementsScreen(
         } else {
             state.filteredRows.filter { row ->
                 row.headline.lowercase().contains(q) ||
-                    row.details.lowercase().contains(q) ||
-                    row.crypto.label.lowercase().contains(q) ||
-                    row.wallet.label.lowercase().contains(q)
+                        row.details.lowercase().contains(q) ||
+                        row.crypto.label.lowercase().contains(q) ||
+                        row.wallet.label.lowercase().contains(q)
             }
         }
         val hasActiveFilters =
             (state.selectedWallet != WalletFilter.ALL) ||
-            (state.selectedCrypto != CryptoFilter.ALL) ||
-            (searchQuery.isNotBlank())
+                    (state.selectedCrypto != CryptoFilter.ALL) ||
+                    (searchQuery.isNotBlank())
 
         Text(title, style = MaterialTheme.typography.headlineSmall)
 
@@ -188,7 +195,9 @@ fun MovementsScreen(
                     Text("Movimientos", style = MaterialTheme.typography.titleMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("${shownRows.size}", style = MaterialTheme.typography.labelLarge)
-                        OutlinedButton(onClick = onCreate) { Text("Nuevo") }
+                        OutlinedButton(
+                            onClick = onCreate, modifier = Modifier.testTag(MovementTags.AddButton)
+                        ) { Text("Nuevo") }
                     }
                 }
                 HorizontalDivider()
@@ -200,11 +209,15 @@ fun MovementsScreen(
                     val parts = buildList {
                         if (state.selectedWallet != WalletFilter.ALL) add(state.selectedWallet.label)
                         if (state.selectedCrypto != CryptoFilter.ALL) add(state.selectedCrypto.label)
-                        if (searchQuery.isNotBlank()) add("Buscar: ${searchQuery}")
+                        if (searchQuery.isNotBlank()) add("Buscar: $searchQuery")
                     }
 
                     Text(
-                        text = if (parts.isEmpty()) "Filtros activos: Ninguno" else "Filtros activos: ${parts.joinToString(" · ")}",
+                        text = if (parts.isEmpty()) "Filtros activos: Ninguno" else "Filtros activos: ${
+                            parts.joinToString(
+                                " · "
+                            )
+                        }",
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.weight(1f)
                     )
@@ -238,7 +251,10 @@ fun MovementsScreen(
                     )
                 } else {
                     LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(MovementTags.List),
+
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(shownRows, key = { it.id }) { row ->
@@ -258,12 +274,21 @@ fun MovementsScreen(
         // Delete confirmation
         if (state.pendingDeleteId != null) {
             AlertDialog(
+                modifier = Modifier.testTag(MovementTags.DeleteDialog),
+
                 onDismissRequest = onCancelDelete,
                 confirmButton = {
-                    TextButton(onClick = { onConfirmDelete(state.pendingDeleteId) }) { Text("Eliminar") }
+                    TextButton(
+                        onClick = {
+                            onConfirmDelete(state.pendingDeleteId)
+                        }, modifier = Modifier.testTag(MovementTags.DeleteConfirm)
+                    ) { Text("Eliminar") }
                 },
                 dismissButton = {
-                    TextButton(onClick = onCancelDelete) { Text("Cancelar") }
+                    TextButton(
+                        onClick = onCancelDelete,
+                        modifier = Modifier.testTag(MovementTags.DeleteCancel)
+                    ) { Text("Cancelar") }
                 },
                 title = { Text("Eliminar movimiento") },
                 text = { Text("Esta acción no se puede deshacer (fake).") }
@@ -275,6 +300,7 @@ fun MovementsScreen(
 
         if (state.movementForm != null) {
             ModalBottomSheet(
+                modifier = Modifier.testTag(MovementTags.FormSheetContainer),
                 onDismissRequest = onDismissForms,
                 sheetState = sheetState
             ) {
@@ -332,8 +358,12 @@ private fun MovementRowItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+
             .clickable(onClick = onClick)
-            .padding(vertical = 6.dp),
+            .padding(vertical = 6.dp)
+            .semantics(mergeDescendants = true) {
+                testTag = MovementTags.row(row.id)
+            },
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Row(
@@ -347,7 +377,10 @@ private fun MovementRowItem(
             Box {
                 var expanded by remember { mutableStateOf(false) }
 
-                IconButton(onClick = { expanded = true }) {
+                IconButton(
+                    onClick = { expanded = true },
+                    modifier = Modifier.testTag(MovementTags.rowMenu(row.id))
+                ) {
                     Icon(Icons.Filled.MoreVert, contentDescription = "Más")
                 }
 
@@ -356,6 +389,8 @@ private fun MovementRowItem(
                     onDismissRequest = { expanded = false }
                 ) {
                     DropdownMenuItem(
+                        modifier = Modifier.testTag(MovementTags.rowEdit(row.id)),
+
                         text = { Text("Editar") },
                         onClick = {
                             expanded = false
@@ -363,6 +398,8 @@ private fun MovementRowItem(
                         }
                     )
                     DropdownMenuItem(
+                        modifier = Modifier.testTag(MovementTags.rowDelete(row.id)),
+
                         text = { Text("Eliminar") },
                         onClick = {
                             expanded = false
