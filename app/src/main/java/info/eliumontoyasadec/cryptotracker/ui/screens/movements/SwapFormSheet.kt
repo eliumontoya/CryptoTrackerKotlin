@@ -28,8 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
-import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

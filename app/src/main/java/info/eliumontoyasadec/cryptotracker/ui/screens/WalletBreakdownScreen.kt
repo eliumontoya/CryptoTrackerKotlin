@@ -36,6 +36,7 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormModelView
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.WalletFilter
 
 // -------- UI models --------
 

@@ -46,11 +46,11 @@ class MovementFormModelView(
         onDraftChangeExternal(draft)
     }
 
-    fun onWalletSelect(wallet: info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter) {
+    fun onWalletSelect(wallet: WalletFilter) {
         onDraftChange(state.draft.copy(wallet = wallet))
     }
 
-    fun onCryptoSelect(crypto: info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter) {
+    fun onCryptoSelect(crypto: CryptoFilter) {
         onDraftChange(state.draft.copy(crypto = crypto))
     }
 

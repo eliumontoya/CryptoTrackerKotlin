@@ -1,6 +1,6 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
-package info.eliumontoyasadec.cryptotracker.ui.screens
+package info.eliumontoyasadec.cryptotracker.ui.screens.movements
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +22,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -44,13 +45,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormModelView
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementTags
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapDraft
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapFormSheetContent
 
 
 enum class MovementMode { IN, OUT, BETWEEN, SWAP }

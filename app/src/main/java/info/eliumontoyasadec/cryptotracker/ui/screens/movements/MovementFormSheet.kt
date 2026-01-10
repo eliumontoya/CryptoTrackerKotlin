@@ -26,8 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
-import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
 
 enum class MovementFormMode { CREATE, EDIT }
 
