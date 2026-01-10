@@ -23,19 +23,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 enum class MovementFormMode { CREATE, EDIT }
 
@@ -64,43 +56,24 @@ enum class MovementTypeUi(val label: String) {
 
 @Composable
 fun MovementFormSheetContent(
-    mode: MovementFormMode,
-    draft: MovementDraft,
-    onChange: (MovementDraft) -> Unit,
-    onCancel: () -> Unit,
-    onSave: () -> Unit
+    state: MovementFormUiState,
+    mv: MovementFormModelView
 ) {
-    val qtyRaw = draft.quantityText.trim()
-    val priceRaw = draft.priceText.trim()
-    val feeRaw = draft.feeQuantityText.trim()
+    val draft = state.draft
 
-    val qtyValue = qtyRaw.toDoubleOrNull()
-    val priceValue = if (priceRaw.isBlank()) 0.0 else priceRaw.toDoubleOrNull()
-    val feeValue = if (feeRaw.isBlank()) 0.0 else feeRaw.toDoubleOrNull()
-
-    val qtyOk = (qtyValue != null && qtyValue > 0.0)
-    val priceOk = (priceRaw.isBlank() || (priceValue != null && priceValue >= 0.0))
-    val feeOk = (feeRaw.isBlank() || (feeValue != null && feeValue >= 0.0))
-
-    val canSave = qtyOk && priceOk && feeOk
-
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
-
-    val formatter = remember {
-        DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault())
-    }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = state.selectedDateMillis
+    )
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 10.dp)
             .testTag(MovementTags.FormSheet),
-
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = if (mode == MovementFormMode.CREATE) "Nuevo movimiento" else "Editar movimiento",
+            text = if (state.mode == MovementFormMode.CREATE) "Nuevo movimiento" else "Editar movimiento",
             style = MaterialTheme.typography.titleLarge
         )
         Text(
@@ -115,7 +88,7 @@ fun MovementFormSheetContent(
             options = WalletFilter.entries.filter { it != WalletFilter.ALL },
             selected = draft.wallet,
             labelOf = { it.label },
-            onSelect = { onChange(draft.copy(wallet = it)) }
+            onSelect = { mv.onWalletSelect(it) }
         )
 
         Text("Crypto", style = MaterialTheme.typography.labelLarge)
@@ -123,7 +96,7 @@ fun MovementFormSheetContent(
             options = CryptoFilter.entries.filter { it != CryptoFilter.ALL },
             selected = draft.crypto,
             labelOf = { it.label },
-            onSelect = { onChange(draft.copy(crypto = it)) }
+            onSelect = { mv.onCryptoSelect(it) }
         )
 
         Text("Tipo", style = MaterialTheme.typography.labelLarge)
@@ -131,58 +104,50 @@ fun MovementFormSheetContent(
             options = MovementTypeUi.entries,
             selected = draft.type,
             labelOf = { it.label },
-            onSelect = { onChange(draft.copy(type = it)) },
+            onSelect = { mv.onTypeSelect(it) },
             modifier = Modifier.testTag(MovementTags.FormTypeChips),
             chipTagOf = { MovementTags.formTypeChip(it.name) }
         )
 
         OutlinedTextField(
             value = draft.quantityText,
-            onValueChange = { onChange(draft.copy(quantityText = it)) },
+            onValueChange = { mv.onQuantityChange(it) },
             label = { Text("Cantidad") },
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(MovementTags.FormQuantity),
             singleLine = true,
-            isError = !qtyOk,
-            supportingText = {
-                if (!qtyOk) {
-                    Text(if (qtyRaw.isBlank()) "Requerido" else "Cantidad inválida")
-                }
-            }
+            isError = state.quantityError != null,
+            supportingText = { state.quantityError?.let { Text(it) } }
         )
 
         OutlinedTextField(
             value = draft.priceText,
-            onValueChange = { onChange(draft.copy(priceText = it)) },
+            onValueChange = { mv.onPriceChange(it) },
             label = { Text("Precio (USD) - opcional") },
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(MovementTags.FormPrice),
             singleLine = true,
-            isError = !priceOk,
-            supportingText = {
-                if (!priceOk) Text("Precio inválido")
-            }
+            isError = state.priceError != null,
+            supportingText = { state.priceError?.let { Text(it) } }
         )
 
         OutlinedTextField(
             value = draft.feeQuantityText,
-            onValueChange = { onChange(draft.copy(feeQuantityText = it)) },
+            onValueChange = { mv.onFeeChange(it) },
             label = { Text("Fee (qty) - opcional") },
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(MovementTags.FormFee),
             singleLine = true,
-            isError = !feeOk,
-            supportingText = {
-                if (!feeOk) Text("Fee inválido")
-            }
+            isError = state.feeError != null,
+            supportingText = { state.feeError?.let { Text(it) } }
         )
 
         OutlinedTextField(
             value = draft.notes,
-            onValueChange = { onChange(draft.copy(notes = it)) },
+            onValueChange = { mv.onNotesChange(it) },
             label = { Text("Notas") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -198,34 +163,23 @@ fun MovementFormSheetContent(
                 style = MaterialTheme.typography.bodySmall
             )
             OutlinedButton(
-                onClick = { showDatePicker = true },
+                onClick = { mv.openDatePicker() },
                 modifier = Modifier.testTag(MovementTags.FormPickDate)
             ) {
                 Text("Elegir")
             }
         }
 
-        if (showDatePicker) {
+        if (state.showDatePicker) {
             DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
+                onDismissRequest = { mv.dismissDatePicker() },
                 confirmButton = {
                     TextButton(
-                        onClick = {
-                            val millis = datePickerState.selectedDateMillis
-                            if (millis != null) {
-                                val localDate = Instant.ofEpochMilli(millis)
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate()
-                                val label = formatter.format(localDate)
-                                onChange(draft.copy(dateLabel = label))
-                            }
-                            showDatePicker = false
-                        }
+                        onClick = { mv.onDatePicked(datePickerState.selectedDateMillis) }
                     ) { Text("Aceptar") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }
-                    ) { Text("Cancelar") }
+                    TextButton(onClick = { mv.dismissDatePicker() }) { Text("Cancelar") }
                 }
             ) {
                 DatePicker(state = datePickerState)
@@ -239,12 +193,13 @@ fun MovementFormSheetContent(
             horizontalArrangement = Arrangement.End
         ) {
             TextButton(
-                onClick = onCancel,
+                onClick = { mv.onCancel() },
                 modifier = Modifier.testTag(MovementTags.FormCancel)
             ) { Text("Cancelar") }
+
             Button(
-                onClick = onSave,
-                enabled = canSave,
+                onClick = { mv.onSave() },
+                enabled = state.canSave,
                 modifier = Modifier.testTag(MovementTags.FormSave)
             ) { Text("Guardar") }
         }

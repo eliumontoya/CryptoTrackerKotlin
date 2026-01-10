@@ -69,7 +69,6 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementMode
 import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsScreen
-import info.eliumontoyasadec.cryptotracker.ui.screens.MovementsViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.PortfolioByCryptosScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
@@ -78,7 +77,9 @@ import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormModelView
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementsViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapFormSheetContent
 import kotlinx.coroutines.launch
@@ -561,19 +562,30 @@ fun AppShell() {
 
     if (showAddMovementDialog) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { showAddMovementDialog = false }, sheetState = sheetState
-        ) {
-            MovementFormSheetContent(mode = MovementFormMode.CREATE,
-                draft = addMovementDraft,
-                onChange = { addMovementDraft = it },
-                onCancel = { showAddMovementDialog = false },
-                onSave = {
+        val formMv = remember(showAddMovementDialog) {
+            MovementFormModelView(
+                initialMode = MovementFormMode.CREATE,
+                initialDraft = addMovementDraft,
+                onCancelExternal = { showAddMovementDialog = false },
+                onDraftChangeExternal = { addMovementDraft = it },
+                onSaveExternal = {
                     // UI-only: close the sheet. (Later: call use case / repo)
                     showAddMovementDialog = false
                     scope.launch { snackbarHostState.showSnackbar("Movimiento guardado") }
-                })
+                }
+            )
         }
+
+        ModalBottomSheet(
+            onDismissRequest = { showAddMovementDialog = false },
+            sheetState = sheetState
+        ) {
+            MovementFormSheetContent(
+                state = formMv.state,
+                mv = formMv
+            )
+        }
+
     }
 
     if (showAddSwapSheet) {

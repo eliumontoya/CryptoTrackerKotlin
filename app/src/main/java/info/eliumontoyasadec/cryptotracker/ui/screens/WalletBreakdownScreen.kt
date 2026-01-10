@@ -31,8 +31,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.remember
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormModelView
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
 
 // -------- UI models --------
@@ -167,12 +169,21 @@ fun WalletBreakdownScreen(
                 onDismissRequest = onDismissForm,
                 sheetState = sheetState
             ) {
+                val form = state.movementForm
+
+                 val formMv = remember(form.mode, form.draft.id) {
+                    MovementFormModelView(
+                        initialMode = form.mode,
+                        initialDraft = form.draft,
+                        onCancelExternal = onDismissForm,
+                        onDraftChangeExternal = onMovementDraftChange,
+                        onSaveExternal = onMovementSave
+                    )
+                }
+
                 MovementFormSheetContent(
-                    mode = state.movementForm.mode,
-                    draft = state.movementForm.draft,
-                    onChange = onMovementDraftChange,
-                    onCancel = onDismissForm,
-                    onSave = onMovementSave
+                    state = formMv.state,
+                    mv = formMv
                 )
             }
         }
