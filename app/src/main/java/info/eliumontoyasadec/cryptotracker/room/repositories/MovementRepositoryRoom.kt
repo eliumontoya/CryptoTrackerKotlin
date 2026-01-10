@@ -54,7 +54,11 @@ class MovementRepositoryRoom(
         walletId: Long?,
         assetId: String?
     ): List<Movement> {
-        TODO("Not yet implemented")
+        return dao.list(
+            portfolioId = portfolioId,
+            walletId = walletId,
+            assetId = assetId
+        ).map { it.toDomain() }
     }
 }
 
@@ -64,6 +68,8 @@ class MovementRepositoryRoom(
    MAPPERS
    ======================= */
 
+
+// Si el dominio manda groupId=0L (convención de “no agrupado”), persistimos null para no ensuciar filtros.
 private fun Movement.toEntity(id: Long): MovementEntity = MovementEntity(
     id = id,
     portfolioId = portfolioId,
@@ -75,7 +81,7 @@ private fun Movement.toEntity(id: Long): MovementEntity = MovementEntity(
     feeQuantity = feeQuantity,
     timestamp = timestamp,
     notes = notes,
-    groupId = groupId
+    groupId = groupId?.takeIf { it != 0L }
 )
 
 private fun MovementEntity.toDomain(): Movement = Movement(

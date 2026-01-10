@@ -85,6 +85,14 @@ class NoOpMovementRepository(
     override suspend fun delete(movementId: Long) {
         TODO("Not yet implemented")
     }
+
+    override suspend fun list(
+        portfolioId: Long,
+        walletId: Long?,
+        assetId: String?
+    ): List<Movement> {
+        TODO("Not yet implemented")
+    }
 }
 
 class NoOpHoldingRepository(
