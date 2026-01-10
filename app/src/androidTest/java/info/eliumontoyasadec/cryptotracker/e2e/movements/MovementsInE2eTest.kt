@@ -5,13 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.printToLog
 import androidx.room.Room
@@ -91,6 +91,10 @@ class MovementsInE2eTest {
 
     @Test
     fun createMovement_addsItem() {
+        val qty = "%.2f".format(java.util.Locale.US, kotlin.random.Random.nextDouble(0.01, 99.99))
+
+        val prc = "%.2f".format(java.util.Locale.US, kotlin.random.Random.nextDouble(0.01, 999.99))
+
         compose.onNodeWithTag(MovementTags.AddButton).performClick()
 
         // Form visible
@@ -99,13 +103,13 @@ class MovementsInE2eTest {
 
 
         // Cambia cantidad
-        compose.onNodeWithTag(MovementTags.FormQuantity).performTextReplacement("10.99")
+        compose.onNodeWithTag(MovementTags.FormQuantity).performTextReplacement(qty)
 
 
 
         // Precio (opcional, pero lo llenamos para forzar recomposición/validación)
         compose.onNodeWithTag(MovementTags.FormPrice)
-            .performTextReplacement("100.99")
+            .performTextReplacement(prc)
 
 
 
@@ -117,10 +121,32 @@ class MovementsInE2eTest {
 
         // Verificación simple: aparece el headline esperado en IN mode
         // (usa texto como “oráculo” porque el id es generado por timestamp)
-        compose.onNodeWithText("10.99", substring = true).assertExists()
-        compose.onNodeWithText("100.99", substring = true).assertExists()
+        compose.onNodeWithText(qty, substring = true).assertExists()
+        compose.onNodeWithText(prc, substring = true).assertExists()
 
     }
+
+    @Test
+    fun editSeedMovement_updatesHeadline() {
+        // Usamos un row seed conocido por fakeRowsFor(IN): "in-1"
+        val id = "in-1"
+
+        val qty = "%.2f".format(java.util.Locale.US, kotlin.random.Random.nextDouble(0.01, 99.99))
+
+        compose.onNodeWithTag(MovementTags.rowMenu(id)).performClick()
+        compose.onNodeWithTag(MovementTags.rowEdit(id)).performClick()
+
+        compose.onNodeWithTag(MovementTags.FormQuantity).performTextClearance()
+        compose.onNodeWithTag(MovementTags.FormQuantity).performTextInput(qty)
+        compose.onNodeWithTag(MovementTags.FormSave).performClick()
+
+        //compose.onRoot().printToLog("MOVEMENTS_TREE")
+        compose.onNodeWithTag(MovementTags.List).printToLog("MOVEMENTS_LIST")
+
+        compose.onNodeWithText(qty, substring = true).assertExists()
+
+    }
+
 
 
     @Test
