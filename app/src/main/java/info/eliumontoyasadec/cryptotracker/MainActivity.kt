@@ -8,10 +8,14 @@ import androidx.compose.runtime.remember
 import info.eliumontoyasadec.cryptotracker.data.queries.RoomPortfolioQueries
 import info.eliumontoyasadec.cryptotracker.data.seed.CatalogSeeder
 import info.eliumontoyasadec.cryptotracker.data.seed.DatabaseWiper
+import info.eliumontoyasadec.cryptotracker.domain.repositories.TransactionRunner
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.room.repositories.CryptoRepositoryRoom
 import info.eliumontoyasadec.cryptotracker.room.repositories.FiatRepositoryRoom
+import info.eliumontoyasadec.cryptotracker.room.repositories.HoldingRepositoryRoom
+import info.eliumontoyasadec.cryptotracker.room.repositories.MovementRepositoryRoom
 import info.eliumontoyasadec.cryptotracker.room.repositories.PortfolioRepositoryRoom
+import info.eliumontoyasadec.cryptotracker.room.repositories.TransactionRunnerRoom
 import info.eliumontoyasadec.cryptotracker.room.repositories.WalletRepositoryRoom
 import info.eliumontoyasadec.cryptotracker.ui.shell.AppDeps
 import info.eliumontoyasadec.cryptotracker.ui.shell.AppShell
@@ -29,13 +33,17 @@ class MainActivity : ComponentActivity() {
 
 
                 AppDeps(
-                portfolioQueries = RoomPortfolioQueries(portfolioQueriesDao),
+                    portfolioQueries = RoomPortfolioQueries(portfolioQueriesDao),
                     catalogSeeder = CatalogSeeder(db),
                     databaseWiper = DatabaseWiper(db),
                     portfolioRepository = PortfolioRepositoryRoom(db.portfolioDao()),
                     walletRepository = WalletRepositoryRoom(db.walletDao()),
                     cryptoRepository = CryptoRepositoryRoom(db.cryptoDao()),
-                    fiatRepository = FiatRepositoryRoom(db.fiatDao())
+                    fiatRepository = FiatRepositoryRoom(db.fiatDao()),
+
+                    movementRepository = MovementRepositoryRoom(db.movementDao()),
+                    holdingRepository = HoldingRepositoryRoom(db.holdingDao()),
+                    txRunner = TransactionRunnerRoom(db)
 
 
                 )

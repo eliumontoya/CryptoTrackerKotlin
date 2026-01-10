@@ -66,22 +66,22 @@ import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioScreen
 import info.eliumontoyasadec.cryptotracker.ui.portfolio.PortfolioViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoDetailViewModel
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.CryptoFilter
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementMode
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementsScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.PortfolioByCryptosScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletBreakdownViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.WalletDetailViewModel
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.WalletFilter
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.CryptoFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormModelView
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementsScreen
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementsViewModel
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.SwapFormSheetContent
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.WalletFilter
 import kotlinx.coroutines.launch
 
 // UI-only filter state (visual feedback only; not wired to ViewModels yet)
@@ -206,7 +206,8 @@ fun AppShell() {
                             Icon(Icons.Filled.Add, contentDescription = "Agregar")
                         }
 
-                        DropdownMenu(expanded = showAddMenu,
+                        DropdownMenu(
+                            expanded = showAddMenu,
                             onDismissRequest = { showAddMenu = false }) {
                             DropdownMenuItem(text = { Text("Movimiento") }, onClick = {
                                 val prefilled = when {
@@ -287,7 +288,8 @@ fun AppShell() {
                     val vm: WalletBreakdownViewModel = viewModel()
                     val state = vm.state.collectAsState().value
 
-                    WalletBreakdownScreen(state = state,
+                    WalletBreakdownScreen(
+                        state = state,
                         onToggleShowEmpty = vm::toggleShowEmpty,
                         onChangeSort = vm::changeSort,
                         onWalletClick = { wallet ->
@@ -305,12 +307,16 @@ fun AppShell() {
                 }
 
                 composable(AppDestination.InMovements.route) {
+                    val deps = LocalAppDeps.current
                     val vm: MovementsViewModel = viewModel(
-                        key = "movements-in", factory = MovementsViewModel.Factory(MovementMode.IN)
+                        key = "movements-in",
+                        factory = deps.movementsViewModelFactory(MovementMode.IN)
                     )
+
                     val state = vm.state.collectAsState().value
 
-                    MovementsScreen(title = "Movimientos de Entrada",
+                    MovementsScreen(
+                        title = "Movimientos de Entrada",
                         state = state,
                         onSelectWallet = vm::selectWallet,
                         onSelectCrypto = vm::selectCrypto,
@@ -337,11 +343,13 @@ fun AppShell() {
                 composable(AppDestination.OutMovements.route) {
                     val vm: MovementsViewModel = viewModel(
                         key = "movements-out",
-                        factory = MovementsViewModel.Factory(MovementMode.OUT)
+                        factory = LocalAppDeps.current.movementsViewModelFactory(MovementMode.OUT)
                     )
+
                     val state = vm.state.collectAsState().value
 
-                    MovementsScreen(title = "Movimientos de Salida",
+                    MovementsScreen(
+                        title = "Movimientos de Salida",
                         state = state,
                         onSelectWallet = vm::selectWallet,
                         onSelectCrypto = vm::selectCrypto,
@@ -366,13 +374,14 @@ fun AppShell() {
                         })
                 }
                 composable(AppDestination.BetweenWallets.route) {
-                    val vm: MovementsViewModel = viewModel(
+                     val vm: MovementsViewModel = viewModel(
                         key = "movements-between",
-                        factory = MovementsViewModel.Factory(MovementMode.BETWEEN)
+                        factory = LocalAppDeps.current.movementsViewModelFactory(MovementMode.BETWEEN)
                     )
                     val state = vm.state.collectAsState().value
 
-                    MovementsScreen(title = "Movimientos Entre Carteras",
+                    MovementsScreen(
+                        title = "Movimientos Entre Carteras",
                         state = state,
                         onSelectWallet = vm::selectWallet,
                         onSelectCrypto = vm::selectCrypto,
@@ -397,13 +406,16 @@ fun AppShell() {
                         })
                 }
                 composable(AppDestination.Swaps.route) {
-                    val vm: MovementsViewModel = viewModel(
+
+                     val vm: MovementsViewModel = viewModel(
                         key = "movements-swap",
-                        factory = MovementsViewModel.Factory(MovementMode.SWAP)
+                        factory = LocalAppDeps.current.movementsViewModelFactory(MovementMode.SWAP)
                     )
+
                     val state = vm.state.collectAsState().value
 
-                    MovementsScreen(title = "Movimientos de Swaps",
+                    MovementsScreen(
+                        title = "Movimientos de Swaps",
                         state = state,
                         onSelectWallet = vm::selectWallet,
                         onSelectCrypto = vm::selectCrypto,
@@ -430,7 +442,8 @@ fun AppShell() {
 
                 composable(AppDestination.Admin.route) {
                     // Admin = Setup Inicial
-                    SetupInitialScreen(onDeleteAllData = { navController.navigate(AppDestination.AdminDeleteData.route) },
+                    SetupInitialScreen(
+                        onDeleteAllData = { navController.navigate(AppDestination.AdminDeleteData.route) },
                         onLoadInitialCatalogs = { navController.navigate(AppDestination.AdminSetupCatalogs.route) },
                         onLoadInitialMovements = { scope.launch { snackbarHostState.showSnackbar("Carga movimientos (pendiente)") } },
                         onBackupExport = { scope.launch { snackbarHostState.showSnackbar("Generar backup (pendiente)") } },
@@ -491,7 +504,8 @@ fun AppShell() {
     }
 
     if (showSearchDialog) {
-        AlertDialog(onDismissRequest = { showSearchDialog = false },
+        AlertDialog(
+            onDismissRequest = { showSearchDialog = false },
             confirmButton = {
                 TextButton(onClick = { showSearchDialog = false }) { Text("Cerrar") }
             },
@@ -522,7 +536,8 @@ fun AppShell() {
                 Text("Cartera", style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Todas", "Metamask", "ByBit", "Phantom").forEach { label ->
-                        FilterChip(selected = selectedWallet == label,
+                        FilterChip(
+                            selected = selectedWallet == label,
                             onClick = { selectedWallet = label },
                             label = { Text(label) })
                     }
@@ -531,7 +546,8 @@ fun AppShell() {
                 Text("Crypto", style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Todas", "BTC", "ETH", "SOL", "ALGO", "AIXBT").forEach { label ->
-                        FilterChip(selected = selectedCrypto == label,
+                        FilterChip(
+                            selected = selectedCrypto == label,
                             onClick = { selectedCrypto = label },
                             label = { Text(label) })
                     }
@@ -593,7 +609,8 @@ fun AppShell() {
         ModalBottomSheet(
             onDismissRequest = { showAddSwapSheet = false }, sheetState = sheetState
         ) {
-            SwapFormSheetContent(draft = addSwapDraft,
+            SwapFormSheetContent(
+                draft = addSwapDraft,
                 onChange = { addSwapDraft = it },
                 onCancel = { showAddSwapSheet = false },
                 onSave = {
@@ -605,7 +622,8 @@ fun AppShell() {
     }
 
     if (showRefreshDialog) {
-        AlertDialog(onDismissRequest = { showRefreshDialog = false },
+        AlertDialog(
+            onDismissRequest = { showRefreshDialog = false },
             confirmButton = {
                 TextButton(onClick = { showRefreshDialog = false }) { Text("Entendido") }
             },
@@ -652,7 +670,8 @@ private fun DrawerItem(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    NavigationDrawerItem(label = { Text(dest.label) },
+    NavigationDrawerItem(
+        label = { Text(dest.label) },
         selected = currentRoute == dest.route,
         onClick = { onNavigate(dest.route) },
         icon = { Icon(dest.icon, contentDescription = dest.label) },

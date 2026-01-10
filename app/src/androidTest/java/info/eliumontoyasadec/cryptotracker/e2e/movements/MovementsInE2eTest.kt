@@ -23,7 +23,10 @@ import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeCryptoRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeFiatRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakePortfolioRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeWalletRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpHoldingRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpMovementRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpPortfolioQueries
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpTransactionRunner
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementTags
 import info.eliumontoyasadec.cryptotracker.ui.shell.AppDeps
@@ -67,7 +70,11 @@ class MovementsInE2eTest {
             portfolioRepository = portfolioRepo,
             walletRepository = walletRepo,
             cryptoRepository = cryptoRepo,
-            fiatRepository = fiatRepo
+            fiatRepository = fiatRepo,
+
+            movementRepository = NoOpMovementRepository(),
+            holdingRepository = NoOpHoldingRepository(),
+            txRunner = NoOpTransactionRunner()
         )
 
         compose.setContent {

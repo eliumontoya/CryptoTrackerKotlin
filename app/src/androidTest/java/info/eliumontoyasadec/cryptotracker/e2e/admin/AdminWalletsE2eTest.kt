@@ -20,7 +20,10 @@ import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakePortfolioRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeWalletRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpCryptoRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpFiatRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpHoldingRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpMovementRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpPortfolioQueries
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpTransactionRunner
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.ui.admin.wallets.AdminWalletsScreen
 import info.eliumontoyasadec.cryptotracker.ui.shell.AppDeps
@@ -84,7 +87,11 @@ class AdminWalletsE2eTest {
             portfolioRepository = portfolioRepo,
             walletRepository = walletRepo,
             cryptoRepository = NoOpCryptoRepository(),
-            fiatRepository = NoOpFiatRepository()
+            fiatRepository = NoOpFiatRepository(),
+
+            movementRepository = NoOpMovementRepository(),
+            holdingRepository = NoOpHoldingRepository(),
+            txRunner = NoOpTransactionRunner()
         )
 
 
