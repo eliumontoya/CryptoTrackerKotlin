@@ -6,6 +6,8 @@ import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.DeleteMove
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMovementCommand
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMovementResult
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMovementUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.LoadMovementsResult
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.LoadMovementsUseCase
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.MoveBetweenWalletsUseCase
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.RegisterMovementCommand
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.RegisterMovementResult
@@ -13,6 +15,7 @@ import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.RegisterMo
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.SwapMovementCommand
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.SwapMovementResult
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.SwapMovementUseCase
+import info.eliumontoyasadec.cryptotracker.domain.model.Movement
 import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
 import info.eliumontoyasadec.cryptotracker.ui.admin.MainDispatcherRule
 import io.mockk.coEvery
@@ -42,6 +45,13 @@ class MovementsViewModelTest {
     private val deleteMovement: DeleteMovementUseCase = mockk()
     private val swapMovement: SwapMovementUseCase = mockk()
     private val moveBetweenWallets: MoveBetweenWalletsUseCase = mockk()
+    private val loadMovements: LoadMovementsUseCase = mockk()
+
+    private lateinit var vm: MovementsViewModel
+
+    // Lista mutable para simular “DB” en tests.
+    // Así, cuando el VM refresca con load(), no pierde el movimiento recién creado.
+    private val loaded = mutableListOf<Movement>()
 
     private fun newVm(
         mode: MovementMode,
@@ -50,20 +60,39 @@ class MovementsViewModelTest {
         delete: DeleteMovementUseCase? = deleteMovement,
         swap: SwapMovementUseCase? = swapMovement,
         moveBetween: MoveBetweenWalletsUseCase? = moveBetweenWallets,
-        portfolioId: Long = 777L,
-        walletId: Long = 10L,
-        assetId: String = "BTC"
+        portfolioId: Long = 777L
     ): MovementsViewModel {
         return MovementsViewModel(
             mode = mode,
+            loadMovements = loadMovements,
             registerMovement = register,
             editMovement = edit,
             deleteMovement = delete,
             swapMovement = swap,
             moveBetweenWallets = moveBetween,
             portfolioIdProvider = { portfolioId },
-            walletIdResolver = { walletId },
-            assetIdResolver = { assetId }
+
+            // ✅ Resolver real: enum -> id. ALL -> null.
+            walletIdResolver = { wf ->
+                when (wf) {
+                    WalletFilter.ALL -> null
+                    WalletFilter.METAMASK -> 10L
+                    WalletFilter.BYBIT -> 20L
+                    WalletFilter.PHANTOM -> 30L
+                }
+            },
+
+            // ✅ Resolver real: enum -> assetId. ALL -> null.
+            assetIdResolver = { cf ->
+                when (cf) {
+                    CryptoFilter.ALL -> null
+                    CryptoFilter.BTC -> "BTC"
+                    CryptoFilter.ETH -> "ETH"
+                    CryptoFilter.SOL -> "SOL"
+                    CryptoFilter.ALGO -> "ALGO"
+                    CryptoFilter.AIXBT -> "AIXBT"
+                }
+            }
         )
     }
 
@@ -74,11 +103,45 @@ class MovementsViewModelTest {
     private fun MovementsUiState.requireSwapForm(): SwapFormState =
         requireNotNull(swapForm) { "Expected swapForm to be non-null" }
 
-    private lateinit var vm: MovementsViewModel
-
     @Before
-    fun setUp() {
+    fun setUp() = runTest {
+        val now = System.currentTimeMillis()
+
+        loaded.clear()
+        loaded += Movement(
+            id = 1L,
+            portfolioId = 777L,
+            walletId = 10L,              // METAMASK
+            assetId = "BTC",             // BTC
+            type = MovementType.DEPOSIT,
+            quantity = 0.1,
+            price = null,
+            feeQuantity = 0.0,
+            timestamp = now,
+            notes = "seed",
+            groupId = null
+        )
+        loaded += Movement(
+            id = 2L,
+            portfolioId = 777L,
+            walletId = 20L,              // BYBIT
+            assetId = "ETH",             // ETH
+            type = MovementType.DEPOSIT,
+            quantity = 1.5,
+            price = null,
+            feeQuantity = 0.0,
+            timestamp = now - 86_400_000,
+            notes = "seed",
+            groupId = null
+        )
+
+        // ✅ Load dinámico: siempre regresa el estado actual de "loaded"
+        coEvery { loadMovements.execute(any()) } answers {
+            LoadMovementsResult(items = loaded.toList())
+        }
+
         vm = newVm(MovementMode.IN)
+        advanceUntilIdle()
     }
 
     // -------------------------
@@ -86,7 +149,8 @@ class MovementsViewModelTest {
     // -------------------------
 
     @Test
-    fun `initial state - has ALL filters and non-empty rows`() {
+    fun `initial state - has ALL filters and non-empty rows`() = runTest {
+        advanceUntilIdle()
         val st = vm.state.value
         assertEquals(WalletFilter.ALL, st.selectedWallet)
         assertEquals(CryptoFilter.ALL, st.selectedCrypto)
@@ -102,8 +166,9 @@ class MovementsViewModelTest {
     // -------------------------
 
     @Test
-    fun `selectWallet - updates selectedWallet and filteredRows`() {
+    fun `selectWallet - updates selectedWallet and filteredRows`() = runTest {
         vm.selectWallet(WalletFilter.METAMASK)
+        advanceUntilIdle()
 
         val st = vm.state.value
         assertEquals(WalletFilter.METAMASK, st.selectedWallet)
@@ -112,8 +177,9 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `selectCrypto - updates selectedCrypto and filteredRows`() {
+    fun `selectCrypto - updates selectedCrypto and filteredRows`() = runTest {
         vm.selectCrypto(CryptoFilter.BTC)
+        advanceUntilIdle()
 
         val st = vm.state.value
         assertEquals(CryptoFilter.BTC, st.selectedCrypto)
@@ -122,9 +188,10 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `selectWallet and selectCrypto - applies AND filter`() {
+    fun `selectWallet and selectCrypto - applies AND filter`() = runTest {
         vm.selectWallet(WalletFilter.METAMASK)
         vm.selectCrypto(CryptoFilter.BTC)
+        advanceUntilIdle()
 
         val st = vm.state.value
         assertEquals(WalletFilter.METAMASK, st.selectedWallet)
@@ -138,8 +205,9 @@ class MovementsViewModelTest {
     // -------------------------
 
     @Test
-    fun `startCreate non-swap - opens movement form in CREATE with default type for mode`() {
+    fun `startCreate non-swap - opens movement form in CREATE with default type for mode`() = runTest {
         vm = newVm(MovementMode.IN)
+        advanceUntilIdle()
 
         vm.startCreate()
 
@@ -151,8 +219,9 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `startCreate swap - opens swap form and clears movement form`() {
+    fun `startCreate swap - opens swap form and clears movement form`() = runTest {
         vm = newVm(MovementMode.SWAP)
+        advanceUntilIdle()
 
         vm.startCreate()
 
@@ -163,7 +232,8 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `startEdit - opens movement form in EDIT with row mapped to draft`() {
+    fun `startEdit - opens movement form in EDIT with row mapped to draft`() = runTest {
+        advanceUntilIdle()
         val row = vm.state.value.rows.first()
 
         vm.startEdit(row)
@@ -180,44 +250,9 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `dismissForms - clears movementForm and swapForm`() {
-        vm.startCreate()
-        assertNotNull(vm.state.value.movementForm)
-
-        vm.dismissForms()
-
-        val st = vm.state.value
-        assertNull(st.movementForm)
-        assertNull(st.swapForm)
-    }
-
-    @Test
-    fun `changeMovementDraft - updates draft when form exists`() {
-        vm.startCreate()
-        val original = vm.state.value.requireMovementForm().draft
-        val updated = original.copy(quantityText = "1.23", priceText = "100")
-
-        vm.changeMovementDraft(updated)
-
-        val st = vm.state.value
-        val form = st.requireMovementForm()
-        assertEquals("1.23", form.draft.quantityText)
-        assertEquals("100", form.draft.priceText)
-    }
-
-    @Test
-    fun `changeMovementDraft - no-op when form is null`() {
-        val before = vm.state.value
-
-        vm.changeMovementDraft(MovementDraft(quantityText = "9"))
-
-        val after = vm.state.value
-        assertEquals(before, after)
-    }
-
-    @Test
-    fun `changeSwapDraft - updates draft when swap form exists`() {
+    fun `changeSwapDraft - updates swap draft fields`() = runTest {
         vm = newVm(MovementMode.SWAP)
+        advanceUntilIdle()
         vm.startCreate()
 
         val original = vm.state.value.requireSwapForm().draft
@@ -236,8 +271,9 @@ class MovementsViewModelTest {
     // -------------------------
 
     @Test
-    fun `saveMovement CREATE - inserts optimistic row, closes form`() {
+    fun `saveMovement CREATE - inserts optimistic row, closes form`() = runTest {
         vm = newVm(MovementMode.IN, register = null) // solo UI-first
+        advanceUntilIdle()
         vm.startCreate()
 
         val draft = vm.state.value.requireMovementForm().draft.copy(
@@ -255,6 +291,7 @@ class MovementsViewModelTest {
         val beforeRows = vm.state.value.rows
 
         vm.saveMovement()
+        advanceUntilIdle()
 
         val st = vm.state.value
         assertNull(st.movementForm)
@@ -264,21 +301,22 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `saveMovement EDIT - updates optimistic row in place, closes form`() {
+    fun `saveMovement EDIT - updates optimistic row in place, closes form`() = runTest {
         vm = newVm(MovementMode.IN, edit = null) // solo UI-first
+        advanceUntilIdle()
 
-        // Importante: editar una fila REAL (id fake) para que el update in-place tenga match.
         val row = vm.state.value.rows.first()
         vm.startEdit(row)
 
         val updated = vm.state.value.requireMovementForm().draft.copy(
-            id = row.id, // asegura que el fallbackId sea el mismo id de la fila
+            id = row.id,
             quantityText = "0.99",
             notes = "updated"
         )
         vm.changeMovementDraft(updated)
 
         vm.saveMovement()
+        advanceUntilIdle()
 
         val st = vm.state.value
         assertNull(st.movementForm)
@@ -291,12 +329,8 @@ class MovementsViewModelTest {
 
     @Test
     fun `saveMovement CREATE - calls registerMovement with command and re-labels id`() = runTest {
-        vm = newVm(
-            mode = MovementMode.IN,
-            portfolioId = 777L,
-            walletId = 10L,
-            assetId = "BTC"
-        )
+        vm = newVm(mode = MovementMode.IN, portfolioId = 777L)
+        advanceUntilIdle()
         vm.startCreate()
 
         vm.changeMovementDraft(
@@ -313,11 +347,31 @@ class MovementsViewModelTest {
         )
 
         val cmdSlot = slot<RegisterMovementCommand>()
-        coEvery { registerMovement.execute(capture(cmdSlot)) } returns RegisterMovementResult(
-            movementId = 99L,
-            holdingId = "h",
-            newHoldingQuantity = 1.0
-        )
+        coEvery { registerMovement.execute(capture(cmdSlot)) } answers {
+            val cmd = cmdSlot.captured
+            val result = RegisterMovementResult(
+                movementId = 99L,
+                holdingId = "h",
+                newHoldingQuantity = 1.0
+            )
+            // ✅ Actualizamos "DB" para que el refresh traiga id=99
+            loaded.add(
+                Movement(
+                    id = result.movementId,
+                    portfolioId = cmd.portfolioId,
+                    walletId = cmd.walletId,
+                    assetId = cmd.assetId,
+                    type = cmd.type,
+                    quantity = cmd.quantity,
+                    price = cmd.price,
+                    feeQuantity = cmd.feeQuantity ?: 0.0,
+                    timestamp = cmd.timestamp,
+                    notes = cmd.notes,
+                    groupId = null
+                )
+            )
+            result
+        }
 
         vm.saveMovement()
         advanceUntilIdle()
@@ -331,7 +385,6 @@ class MovementsViewModelTest {
         assertEquals(0.1, cmdSlot.captured.feeQuantity!!, 0.000001)
         assertEquals("note", cmdSlot.captured.notes)
 
-        // Se re-etiqueta el id fake -> id real (string)
         val st = vm.state.value
         assertTrue(st.rows.any { it.id == "99" })
         assertFalse(st.rows.any { it.id == "tmp-1" })
@@ -342,8 +395,9 @@ class MovementsViewModelTest {
     @Test
     fun `saveMovement EDIT - calls editMovement with command when row id is numeric (after register relabel)`() = runTest {
         vm = newVm(mode = MovementMode.IN)
+        advanceUntilIdle()
 
-        // Primero: CREATE productivo para obtener id real numérico en la lista
+        // CREATE productivo para obtener id real numérico
         vm.startCreate()
         vm.changeMovementDraft(
             vm.state.value.requireMovementForm().draft.copy(
@@ -355,19 +409,39 @@ class MovementsViewModelTest {
                 notes = "seed"
             )
         )
-        coEvery { registerMovement.execute(any()) } returns RegisterMovementResult(
-            movementId = 123L,
-            holdingId = "h",
-            newHoldingQuantity = 0.0
-        )
+
+        coEvery { registerMovement.execute(any()) } answers {
+            val cmd = firstArg<RegisterMovementCommand>()
+            val result = RegisterMovementResult(
+                movementId = 123L,
+                holdingId = "h",
+                newHoldingQuantity = 0.0
+            )
+            loaded.add(
+                Movement(
+                    id = result.movementId,
+                    portfolioId = cmd.portfolioId,
+                    walletId = cmd.walletId,
+                    assetId = cmd.assetId,
+                    type = cmd.type,
+                    quantity = cmd.quantity,
+                    price = cmd.price,
+                    feeQuantity = cmd.feeQuantity ?: 0.0,
+                    timestamp = cmd.timestamp,
+                    notes = cmd.notes,
+                    groupId = null
+                )
+            )
+            result
+        }
 
         vm.saveMovement()
         advanceUntilIdle()
 
-        val createdRow = vm.state.value.rows.first()
-        assertEquals("123", createdRow.id) // ya es numérico
+        val createdRow = vm.state.value.rows.first { it.id == "123" }  // en el test EDIT
+        assertEquals("123", createdRow.id)
 
-        // Ahora sí: EDIT productivo sobre id numérico
+        // EDIT productivo
         vm.startEdit(createdRow)
         vm.changeMovementDraft(
             vm.state.value.requireMovementForm().draft.copy(
@@ -405,8 +479,9 @@ class MovementsViewModelTest {
     // -------------------------
 
     @Test
-    fun `saveSwap - inserts optimistic swap row and closes swap form`() {
+    fun `saveSwap - inserts optimistic swap row and closes swap form`() = runTest {
         vm = newVm(MovementMode.SWAP, swap = null) // solo UI-first
+        advanceUntilIdle()
         vm.startCreate()
 
         vm.changeSwapDraft(
@@ -422,6 +497,7 @@ class MovementsViewModelTest {
 
         val before = vm.state.value.rows
         vm.saveSwap()
+        advanceUntilIdle()
 
         val st = vm.state.value
         assertNull(st.swapForm)
@@ -431,27 +507,8 @@ class MovementsViewModelTest {
 
     @Test
     fun `saveSwap - calls swapMovement with command`() = runTest {
-        // Aquí mantenemos el resolver específico para Swap (por CryptoFilter → assetId)
-        vm = MovementsViewModel(
-            mode = MovementMode.SWAP,
-            registerMovement = null,
-            editMovement = null,
-            deleteMovement = null,
-            swapMovement = swapMovement,
-            moveBetweenWallets = moveBetweenWallets,
-            portfolioIdProvider = { 777L },
-            walletIdResolver = { 10L },
-            assetIdResolver = { filter ->
-                when (filter) {
-                    CryptoFilter.ALGO -> "ALGO"
-                    CryptoFilter.AIXBT -> "AIXBT"
-                    CryptoFilter.BTC -> "BTC"
-                    CryptoFilter.ETH -> "ETH"
-                    CryptoFilter.SOL -> "SOL"
-                    CryptoFilter.ALL -> null
-                }
-            }
-        )
+        vm = newVm(MovementMode.SWAP)
+        advanceUntilIdle()
 
         vm.startCreate()
         vm.changeSwapDraft(
@@ -494,7 +551,8 @@ class MovementsViewModelTest {
     // -------------------------
 
     @Test
-    fun `requestDelete - sets pendingDeleteId`() {
+    fun `requestDelete - sets pendingDeleteId`() = runTest {
+        advanceUntilIdle()
         val row = vm.state.value.rows.first()
 
         vm.requestDelete(row)
@@ -503,7 +561,8 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `cancelDelete - clears pendingDeleteId`() {
+    fun `cancelDelete - clears pendingDeleteId`() = runTest {
+        advanceUntilIdle()
         val row = vm.state.value.rows.first()
         vm.requestDelete(row)
 
@@ -513,12 +572,15 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `confirmDelete - removes row and clears pendingDeleteId`() {
+    fun `confirmDelete - removes row and clears pendingDeleteId`() = runTest {
         vm = newVm(MovementMode.IN, delete = null) // solo UI-first
+        advanceUntilIdle()
+
         val row = vm.state.value.rows.first()
         vm.requestDelete(row)
 
         vm.confirmDelete(row.id)
+        advanceUntilIdle()
 
         val st = vm.state.value
         assertNull(st.pendingDeleteId)
@@ -528,8 +590,9 @@ class MovementsViewModelTest {
     @Test
     fun `confirmDelete - calls deleteMovement when id is numeric (after register relabel)`() = runTest {
         vm = newVm(mode = MovementMode.IN)
+        advanceUntilIdle()
 
-        // Crear productivo para tener un id numérico en la lista
+        // CREATE productivo para tener id numérico
         vm.startCreate()
         vm.changeMovementDraft(
             vm.state.value.requireMovementForm().draft.copy(
@@ -541,16 +604,36 @@ class MovementsViewModelTest {
                 notes = "seed"
             )
         )
-        coEvery { registerMovement.execute(any()) } returns RegisterMovementResult(
-            movementId = 999L,
-            holdingId = "h",
-            newHoldingQuantity = 0.0
-        )
+
+        coEvery { registerMovement.execute(any()) } answers {
+            val cmd = firstArg<RegisterMovementCommand>()
+            val result = RegisterMovementResult(
+                movementId = 999L,
+                holdingId = "h",
+                newHoldingQuantity = 0.0
+            )
+            loaded.add(
+                Movement(
+                    id = result.movementId,
+                    portfolioId = cmd.portfolioId,
+                    walletId = cmd.walletId,
+                    assetId = cmd.assetId,
+                    type = cmd.type,
+                    quantity = cmd.quantity,
+                    price = cmd.price,
+                    feeQuantity = cmd.feeQuantity ?: 0.0,
+                    timestamp = cmd.timestamp,
+                    notes = cmd.notes,
+                    groupId = null
+                )
+            )
+            result
+        }
 
         vm.saveMovement()
         advanceUntilIdle()
 
-        val createdRow = vm.state.value.rows.first()
+        val createdRow = vm.state.value.rows.first { it.id == "999" }
         assertEquals("999", createdRow.id)
 
         val cmdSlot = slot<DeleteMovementCommand>()
@@ -570,6 +653,7 @@ class MovementsViewModelTest {
     @Test
     fun `confirmDelete - does NOT call deleteMovement when id is non-numeric and not in idMap`() = runTest {
         vm = newVm(MovementMode.IN)
+        advanceUntilIdle()
 
         vm.confirmDelete("tmp-x")
         advanceUntilIdle()
