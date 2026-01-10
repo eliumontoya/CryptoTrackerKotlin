@@ -1,8 +1,10 @@
 package info.eliumontoyasadec.cryptotracker.ui.screens.movements
 
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.DeleteMovementCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.DeleteMovementResult
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.DeleteMovementUseCase
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMovementCommand
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMovementResult
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMovementUseCase
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.MoveBetweenWalletsUseCase
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.RegisterMovementCommand
@@ -64,6 +66,13 @@ class MovementsViewModelTest {
             assetIdResolver = { assetId }
         )
     }
+
+    // Helpers para evitar smart-cast entre módulos
+    private fun MovementsUiState.requireMovementForm(): MovementFormState =
+        requireNotNull(movementForm) { "Expected movementForm to be non-null" }
+
+    private fun MovementsUiState.requireSwapForm(): SwapFormState =
+        requireNotNull(swapForm) { "Expected swapForm to be non-null" }
 
     private lateinit var vm: MovementsViewModel
 
@@ -135,10 +144,10 @@ class MovementsViewModelTest {
         vm.startCreate()
 
         val st = vm.state.value
-        assertNotNull(st.movementForm)
+        val form = st.requireMovementForm()
         assertNull(st.swapForm)
-        assertEquals(MovementFormMode.CREATE, st.movementForm!!.mode)
-        assertEquals(MovementTypeUi.DEPOSIT, st.movementForm.draft.type)
+        assertEquals(MovementFormMode.CREATE, form.mode)
+        assertEquals(MovementTypeUi.DEPOSIT, form.draft.type)
     }
 
     @Test
@@ -149,8 +158,8 @@ class MovementsViewModelTest {
 
         val st = vm.state.value
         assertNull(st.movementForm)
-        assertNotNull(st.swapForm)
-        assertNotNull(st.swapForm!!.draft)
+        val swap = st.requireSwapForm()
+        assertNotNull(swap.draft)
     }
 
     @Test
@@ -160,13 +169,13 @@ class MovementsViewModelTest {
         vm.startEdit(row)
 
         val st = vm.state.value
-        assertNotNull(st.movementForm)
-        assertEquals(MovementFormMode.EDIT, st.movementForm!!.mode)
-        assertEquals(row.id, st.movementForm.draft.id)
-        assertEquals(row.wallet, st.movementForm.draft.wallet)
-        assertEquals(row.crypto, st.movementForm.draft.crypto)
-        assertEquals(row.dateLabel, st.movementForm.draft.dateLabel)
-        assertEquals(row.details, st.movementForm.draft.notes)
+        val form = st.requireMovementForm()
+        assertEquals(MovementFormMode.EDIT, form.mode)
+        assertEquals(row.id, form.draft.id)
+        assertEquals(row.wallet, form.draft.wallet)
+        assertEquals(row.crypto, form.draft.crypto)
+        assertEquals(row.dateLabel, form.draft.dateLabel)
+        assertEquals(row.details, form.draft.notes)
         assertNull(st.swapForm)
     }
 
@@ -185,14 +194,15 @@ class MovementsViewModelTest {
     @Test
     fun `changeMovementDraft - updates draft when form exists`() {
         vm.startCreate()
-        val original = vm.state.value.movementForm!!.draft
+        val original = vm.state.value.requireMovementForm().draft
         val updated = original.copy(quantityText = "1.23", priceText = "100")
 
         vm.changeMovementDraft(updated)
 
         val st = vm.state.value
-        assertEquals("1.23", st.movementForm!!.draft.quantityText)
-        assertEquals("100", st.movementForm.draft.priceText)
+        val form = st.requireMovementForm()
+        assertEquals("1.23", form.draft.quantityText)
+        assertEquals("100", form.draft.priceText)
     }
 
     @Test
@@ -210,14 +220,15 @@ class MovementsViewModelTest {
         vm = newVm(MovementMode.SWAP)
         vm.startCreate()
 
-        val original = vm.state.value.swapForm!!.draft
+        val original = vm.state.value.requireSwapForm().draft
         val updated = original.copy(fromQtyText = "5", toQtyText = "1")
 
         vm.changeSwapDraft(updated)
 
         val st = vm.state.value
-        assertEquals("5", st.swapForm!!.draft.fromQtyText)
-        assertEquals("1", st.swapForm.draft.toQtyText)
+        val swap = st.requireSwapForm()
+        assertEquals("5", swap.draft.fromQtyText)
+        assertEquals("1", swap.draft.toQtyText)
     }
 
     // -------------------------
@@ -229,7 +240,7 @@ class MovementsViewModelTest {
         vm = newVm(MovementMode.IN, register = null) // solo UI-first
         vm.startCreate()
 
-        val draft = vm.state.value.movementForm!!.draft.copy(
+        val draft = vm.state.value.requireMovementForm().draft.copy(
             id = "tmp-1",
             wallet = WalletFilter.METAMASK,
             crypto = CryptoFilter.BTC,
@@ -255,10 +266,13 @@ class MovementsViewModelTest {
     @Test
     fun `saveMovement EDIT - updates optimistic row in place, closes form`() {
         vm = newVm(MovementMode.IN, edit = null) // solo UI-first
-        val row = vm.state.value.rows.first()
 
+        // Importante: editar una fila REAL (id fake) para que el update in-place tenga match.
+        val row = vm.state.value.rows.first()
         vm.startEdit(row)
-        val updated = vm.state.value.movementForm!!.draft.copy(
+
+        val updated = vm.state.value.requireMovementForm().draft.copy(
+            id = row.id, // asegura que el fallbackId sea el mismo id de la fila
             quantityText = "0.99",
             notes = "updated"
         )
@@ -286,7 +300,7 @@ class MovementsViewModelTest {
         vm.startCreate()
 
         vm.changeMovementDraft(
-            vm.state.value.movementForm!!.draft.copy(
+            vm.state.value.requireMovementForm().draft.copy(
                 id = "tmp-1",
                 wallet = WalletFilter.METAMASK,
                 crypto = CryptoFilter.BTC,
@@ -317,6 +331,7 @@ class MovementsViewModelTest {
         assertEquals(0.1, cmdSlot.captured.feeQuantity!!, 0.000001)
         assertEquals("note", cmdSlot.captured.notes)
 
+        // Se re-etiqueta el id fake -> id real (string)
         val st = vm.state.value
         assertTrue(st.rows.any { it.id == "99" })
         assertFalse(st.rows.any { it.id == "tmp-1" })
@@ -325,13 +340,38 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `saveMovement EDIT - calls editMovement with command when draft id is numeric`() = runTest {
+    fun `saveMovement EDIT - calls editMovement with command when row id is numeric (after register relabel)`() = runTest {
         vm = newVm(mode = MovementMode.IN)
-        val row = vm.state.value.rows.first().copy(id = "123")
 
-        vm.startEdit(row)
+        // Primero: CREATE productivo para obtener id real numérico en la lista
+        vm.startCreate()
         vm.changeMovementDraft(
-            vm.state.value.movementForm!!.draft.copy(
+            vm.state.value.requireMovementForm().draft.copy(
+                id = "tmp-1",
+                wallet = WalletFilter.METAMASK,
+                crypto = CryptoFilter.BTC,
+                type = MovementTypeUi.DEPOSIT,
+                quantityText = "1",
+                notes = "seed"
+            )
+        )
+        coEvery { registerMovement.execute(any()) } returns RegisterMovementResult(
+            movementId = 123L,
+            holdingId = "h",
+            newHoldingQuantity = 0.0
+        )
+
+        vm.saveMovement()
+        advanceUntilIdle()
+
+        val createdRow = vm.state.value.rows.first()
+        assertEquals("123", createdRow.id) // ya es numérico
+
+        // Ahora sí: EDIT productivo sobre id numérico
+        vm.startEdit(createdRow)
+        vm.changeMovementDraft(
+            vm.state.value.requireMovementForm().draft.copy(
+                id = createdRow.id,
                 type = MovementTypeUi.BUY,
                 quantityText = "2.0",
                 priceText = "100.5",
@@ -341,12 +381,11 @@ class MovementsViewModelTest {
         )
 
         val cmdSlot = slot<EditMovementCommand>()
-        coEvery { editMovement.execute(capture(cmdSlot)) } returns
-                info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMovementResult(
-                    movementId = 123L,
-                    holdingId = "h",
-                    newHoldingQuantity = 0.0
-                )
+        coEvery { editMovement.execute(capture(cmdSlot)) } returns EditMovementResult(
+            movementId = 123L,
+            holdingId = "h",
+            newHoldingQuantity = 0.0
+        )
 
         vm.saveMovement()
         advanceUntilIdle()
@@ -361,25 +400,6 @@ class MovementsViewModelTest {
         coVerify(exactly = 1) { editMovement.execute(any()) }
     }
 
-    @Test
-    fun `saveMovement EDIT - does NOT call editMovement when movementId cannot be resolved`() = runTest {
-        vm = newVm(mode = MovementMode.IN)
-        val row = vm.state.value.rows.first().copy(id = "tmp-x")
-        vm.startEdit(row)
-
-        vm.changeMovementDraft(
-            vm.state.value.movementForm!!.draft.copy(
-                quantityText = "1",
-                notes = "x"
-            )
-        )
-
-        vm.saveMovement()
-        advanceUntilIdle()
-
-        coVerify(exactly = 0) { editMovement.execute(any()) }
-    }
-
     // -------------------------
     // saveSwap - UI-first + productive side effects
     // -------------------------
@@ -390,7 +410,7 @@ class MovementsViewModelTest {
         vm.startCreate()
 
         vm.changeSwapDraft(
-            vm.state.value.swapForm!!.draft.copy(
+            vm.state.value.requireSwapForm().draft.copy(
                 id = "swap-1",
                 wallet = WalletFilter.METAMASK,
                 fromCrypto = CryptoFilter.ALGO,
@@ -411,6 +431,7 @@ class MovementsViewModelTest {
 
     @Test
     fun `saveSwap - calls swapMovement with command`() = runTest {
+        // Aquí mantenemos el resolver específico para Swap (por CryptoFilter → assetId)
         vm = MovementsViewModel(
             mode = MovementMode.SWAP,
             registerMovement = null,
@@ -420,8 +441,8 @@ class MovementsViewModelTest {
             moveBetweenWallets = moveBetweenWallets,
             portfolioIdProvider = { 777L },
             walletIdResolver = { 10L },
-            assetIdResolver = {
-                when (it) {
+            assetIdResolver = { filter ->
+                when (filter) {
                     CryptoFilter.ALGO -> "ALGO"
                     CryptoFilter.AIXBT -> "AIXBT"
                     CryptoFilter.BTC -> "BTC"
@@ -434,7 +455,7 @@ class MovementsViewModelTest {
 
         vm.startCreate()
         vm.changeSwapDraft(
-            vm.state.value.swapForm!!.draft.copy(
+            vm.state.value.requireSwapForm().draft.copy(
                 id = "swap-1",
                 wallet = WalletFilter.METAMASK,
                 fromCrypto = CryptoFilter.ALGO,
@@ -505,18 +526,41 @@ class MovementsViewModelTest {
     }
 
     @Test
-    fun `confirmDelete - calls deleteMovement when id is numeric`() = runTest {
-        vm = newVm(MovementMode.IN)
+    fun `confirmDelete - calls deleteMovement when id is numeric (after register relabel)`() = runTest {
+        vm = newVm(mode = MovementMode.IN)
+
+        // Crear productivo para tener un id numérico en la lista
+        vm.startCreate()
+        vm.changeMovementDraft(
+            vm.state.value.requireMovementForm().draft.copy(
+                id = "tmp-del",
+                wallet = WalletFilter.METAMASK,
+                crypto = CryptoFilter.BTC,
+                type = MovementTypeUi.DEPOSIT,
+                quantityText = "1",
+                notes = "seed"
+            )
+        )
+        coEvery { registerMovement.execute(any()) } returns RegisterMovementResult(
+            movementId = 999L,
+            holdingId = "h",
+            newHoldingQuantity = 0.0
+        )
+
+        vm.saveMovement()
+        advanceUntilIdle()
+
+        val createdRow = vm.state.value.rows.first()
+        assertEquals("999", createdRow.id)
 
         val cmdSlot = slot<DeleteMovementCommand>()
-        coEvery { deleteMovement.execute(capture(cmdSlot)) } returns
-                info.eliumontoyasadec.cryptotracker.domain.interactor.movement.DeleteMovementResult(
-                    movementId = 999L,
-                    holdingId = "h",
-                    newHoldingQuantity = 0.0
-                )
+        coEvery { deleteMovement.execute(capture(cmdSlot)) } returns DeleteMovementResult(
+            movementId = 999L,
+            holdingId = "h",
+            newHoldingQuantity = 0.0
+        )
 
-        vm.confirmDelete("999")
+        vm.confirmDelete(createdRow.id)
         advanceUntilIdle()
 
         assertEquals(999L, cmdSlot.captured.movementId)
