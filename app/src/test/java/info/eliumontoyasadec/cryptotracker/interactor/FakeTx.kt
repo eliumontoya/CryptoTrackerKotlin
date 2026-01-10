@@ -184,6 +184,14 @@ class FakeMovementRepo : MovementRepository {
         store.remove(movementId)
         lastDeletedId = movementId
     }
+
+    override suspend fun list(
+        portfolioId: Long,
+        walletId: Long?,
+        assetId: String?
+    ): List<Movement> {
+        TODO("Not yet implemented")
+    }
 }
 
 class FakeHoldingRepo : HoldingRepository {

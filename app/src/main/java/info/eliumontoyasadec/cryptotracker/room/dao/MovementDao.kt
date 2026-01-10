@@ -27,6 +27,21 @@ interface MovementDao {
         """
         SELECT * FROM movements
         WHERE portfolioId = :portfolioId
+          AND (:walletId IS NULL OR walletId = :walletId)
+          AND (:assetId IS NULL OR assetId = :assetId)
+        ORDER BY timestamp DESC
+        """
+    )
+    suspend fun list(
+        portfolioId: Long,
+        walletId: Long?,
+        assetId: String?
+    ): List<MovementEntity>
+
+    @Query(
+        """
+        SELECT * FROM movements
+        WHERE portfolioId = :portfolioId
           AND walletId = :walletId
         ORDER BY timestamp DESC
         """

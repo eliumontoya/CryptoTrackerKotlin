@@ -16,7 +16,10 @@ import info.eliumontoyasadec.cryptotracker.data.seed.DatabaseWiper
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakePortfolioRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpCryptoRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpFiatRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpHoldingRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpMovementRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpPortfolioQueries
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpTransactionRunner
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpWalletRepository
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.ui.admin.portfolios.AdminPortfoliosScreen
@@ -63,6 +66,7 @@ class AdminPortfoliosE2eTest {
     }
 
     private fun setScreen(repo: FakePortfolioRepository) {
+
         val deps = AppDeps(
             portfolioQueries = NoOpPortfolioQueries(),
             catalogSeeder = CatalogSeeder(db),
@@ -70,7 +74,11 @@ class AdminPortfoliosE2eTest {
             portfolioRepository = repo,
             walletRepository = NoOpWalletRepository(),
             cryptoRepository = NoOpCryptoRepository(),
-            fiatRepository = NoOpFiatRepository()
+            fiatRepository = NoOpFiatRepository(),
+
+            movementRepository = NoOpMovementRepository(),
+            holdingRepository = NoOpHoldingRepository(),
+            txRunner = NoOpTransactionRunner()
         )
 
         composeRule.setContent {
@@ -142,7 +150,9 @@ class AdminPortfoliosE2eTest {
         composeRule.onNodeWithTag("admin_portfolios_make_default_2").performClick()
 
         // Assert only P2 has default badge
-        composeRule.onNodeWithTag("admin_portfolios_default_badge_2", useUnmergedTree = true).assertExists()
-        composeRule.onNodeWithTag("admin_portfolios_default_badge_1", useUnmergedTree = true).assertDoesNotExist()
+        composeRule.onNodeWithTag("admin_portfolios_default_badge_2", useUnmergedTree = true)
+            .assertExists()
+        composeRule.onNodeWithTag("admin_portfolios_default_badge_1", useUnmergedTree = true)
+            .assertDoesNotExist()
     }
 }

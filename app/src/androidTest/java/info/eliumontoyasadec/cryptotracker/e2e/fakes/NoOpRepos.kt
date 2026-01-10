@@ -2,10 +2,17 @@ package info.eliumontoyasadec.cryptotracker.e2e.fakes
 
 import info.eliumontoyasadec.cryptotracker.domain.model.Crypto
 import info.eliumontoyasadec.cryptotracker.domain.model.Fiat
+import info.eliumontoyasadec.cryptotracker.domain.model.Holding
+import info.eliumontoyasadec.cryptotracker.domain.model.Movement
 import info.eliumontoyasadec.cryptotracker.domain.model.Wallet
 import info.eliumontoyasadec.cryptotracker.domain.repositories.CryptoRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.FiatRepository
+import info.eliumontoyasadec.cryptotracker.domain.repositories.HoldingRepository
+import info.eliumontoyasadec.cryptotracker.domain.repositories.MovementRepository
+import info.eliumontoyasadec.cryptotracker.domain.repositories.TransactionRunner
 import info.eliumontoyasadec.cryptotracker.domain.repositories.WalletRepository
+import info.eliumontoyasadec.cryptotracker.room.dao.HoldingDao
+import info.eliumontoyasadec.cryptotracker.room.dao.MovementDao
 
 class NoOpWalletRepository (
     initial: List<Wallet> = emptyList()
@@ -56,4 +63,61 @@ class NoOpFiatRepository : FiatRepository {
     override suspend fun countAll(): Int = 0
     override suspend fun upsert(item: Fiat) = Unit
     override suspend fun delete(code: String): Boolean = false
+}
+
+class NoOpMovementRepository(
+ ) : MovementRepository {
+    override suspend fun insert(movement: Movement): Long {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun findById(movementId: Long): Movement? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun update(
+        movementId: Long,
+        update: Movement
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun delete(movementId: Long) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun list(
+        portfolioId: Long,
+        walletId: Long?,
+        assetId: String?
+    ): List<Movement> {
+        TODO("Not yet implemented")
+    }
+}
+
+class NoOpHoldingRepository(
+ ) : HoldingRepository {
+    override suspend fun findByWalletAsset(
+        walletId: Long,
+        assetId: String
+    ): Holding? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun upsert(
+        portfolioId: Long,
+        walletId: Long,
+        assetId: String,
+        newQuantity: Double,
+        updatedAt: Long
+    ): Holding {
+        TODO("Not yet implemented")
+    }
+}
+
+class NoOpTransactionRunner(
+) : TransactionRunner {
+    override suspend fun <T> runInTransaction(block: suspend () -> T): T {
+        TODO("Not yet implemented")
+    }
 }

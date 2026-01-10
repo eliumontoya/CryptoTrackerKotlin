@@ -20,7 +20,10 @@ import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeFiatRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakePortfolioRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeWalletRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpCryptoRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpHoldingRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpMovementRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpPortfolioQueries
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpTransactionRunner
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.ui.admin.fiat.AdminFiatScreen
 import info.eliumontoyasadec.cryptotracker.ui.admin.fiat.AdminFiatTags
@@ -40,8 +43,8 @@ class AdminFiatE2eTest {
     private lateinit var fiatRepo: FiatRepository
     private lateinit var portfolioRepo: FakePortfolioRepository
     private lateinit var walletRepo: FakeWalletRepository
-
     private lateinit var db: AppDatabase
+
     @Before
     fun setUp() {
 
@@ -51,7 +54,7 @@ class AdminFiatE2eTest {
             .build()
 
 
-        portfolioRepo = FakePortfolioRepository( )
+        portfolioRepo = FakePortfolioRepository()
         walletRepo = FakeWalletRepository(seed = emptyList())
 
         fiatRepo = FakeFiatRepository(
@@ -68,7 +71,10 @@ class AdminFiatE2eTest {
             portfolioRepository = portfolioRepo,
             walletRepository = walletRepo,
             cryptoRepository = NoOpCryptoRepository(),
-            fiatRepository = fiatRepo
+            fiatRepository = fiatRepo,
+            movementRepository = NoOpMovementRepository(),
+            holdingRepository = NoOpHoldingRepository(),
+            txRunner = NoOpTransactionRunner()
         )
 
 
@@ -138,8 +144,6 @@ class AdminFiatE2eTest {
         rule.onNodeWithTag(AdminFiatTags.DELETE_DIALOG).assertDoesNotExist()
         rule.onNodeWithTag(AdminFiatTags.item("MXN")).assertDoesNotExist()
     }
-
-
 
 
 }

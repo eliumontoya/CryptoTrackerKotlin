@@ -19,7 +19,11 @@ import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeCryptoRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeFiatRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakePortfolioRepository
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.FakeWalletRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpHoldingRepository
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpMovementRepository
+
 import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpPortfolioQueries
+import info.eliumontoyasadec.cryptotracker.e2e.fakes.NoOpTransactionRunner
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.ui.admin.cryptos.AdminCryptoTags
 import info.eliumontoyasadec.cryptotracker.ui.admin.cryptos.AdminCryptosScreen
@@ -30,6 +34,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
+
 @RunWith(AndroidJUnit4::class)
 class AdminCryptoE2eTest {
 
@@ -39,9 +44,12 @@ class AdminCryptoE2eTest {
     private lateinit var fiatRepo: FiatRepository
     private lateinit var portfolioRepo: FakePortfolioRepository
     private lateinit var walletRepo: FakeWalletRepository
+
     private lateinit var cryptoRepo: FakeCryptoRepository
 
+
     private lateinit var db: AppDatabase
+
     @Before
     fun setUp() {
         cryptoRepo = FakeCryptoRepository().apply { seedDefaults() }
@@ -52,12 +60,13 @@ class AdminCryptoE2eTest {
             .build()
 
 
-        portfolioRepo = FakePortfolioRepository( )
-        walletRepo = FakeWalletRepository( )
+        portfolioRepo = FakePortfolioRepository()
+        walletRepo = FakeWalletRepository()
 
         fiatRepo = FakeFiatRepository(
 
         )
+
 
         val deps = AppDeps(
             portfolioQueries = NoOpPortfolioQueries(),
@@ -66,7 +75,11 @@ class AdminCryptoE2eTest {
             portfolioRepository = portfolioRepo,
             walletRepository = walletRepo,
             cryptoRepository = cryptoRepo,
-            fiatRepository = fiatRepo
+            fiatRepository = fiatRepo,
+
+            movementRepository = NoOpMovementRepository(),
+            holdingRepository = NoOpHoldingRepository(),
+            txRunner = NoOpTransactionRunner()
         )
 
 
@@ -123,6 +136,7 @@ class AdminCryptoE2eTest {
 
         compose.onNodeWithTag(AdminCryptoTags.CONFIRM_DELETE).performClick()
 
-        compose.onNodeWithTag(AdminCryptoTags.item("SOL"), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag(AdminCryptoTags.item("SOL"), useUnmergedTree = true)
+            .assertDoesNotExist()
     }
 }
