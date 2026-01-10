@@ -335,6 +335,14 @@ class MoveBetweenWalletsUseCaseTest {
         override suspend fun delete(movementId: Long) {
             store.remove(movementId)
         }
+
+        override suspend fun list(
+            portfolioId: Long,
+            walletId: Long?,
+            assetId: String?
+        ): List<Movement> {
+            TODO("Not yet implemented")
+        }
     }
 
     private class FakeHoldingRepository : HoldingRepository {

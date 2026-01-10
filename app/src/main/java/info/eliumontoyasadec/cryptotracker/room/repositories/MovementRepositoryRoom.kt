@@ -48,6 +48,14 @@ class MovementRepositoryRoom(
     override suspend fun delete(movementId: Long) {
         dao.deleteById(movementId)
     }
+
+    override suspend fun list(
+        portfolioId: Long,
+        walletId: Long?,
+        assetId: String?
+    ): List<Movement> {
+        TODO("Not yet implemented")
+    }
 }
 
 
