@@ -13,27 +13,30 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import info.eliumontoyasadec.cryptotracker.domain.model.Wallet
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementDraft
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormMode
+import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormModelView
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementFormSheetContent
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 // -------- UI models --------
 
@@ -51,6 +54,7 @@ enum class WalletSortBy(val label: String) {
 // -------- UI State --------
 
 data class WalletBreakdownUiState(
+    val wallets: List<Wallet> = emptyList(),
     val showEmpty: Boolean = false,
     val sortBy: WalletSortBy = WalletSortBy.VALUE,
     val rows: List<WalletBreakdownRow> = emptyList(),
@@ -167,12 +171,22 @@ fun WalletBreakdownScreen(
                 onDismissRequest = onDismissForm,
                 sheetState = sheetState
             ) {
+                val form = state.movementForm
+
+                 val formMv = remember(form.mode, form.draft.id) {
+                    MovementFormModelView(
+                        initialMode = form.mode,
+                        initialDraft = form.draft,
+                        onCancelExternal = onDismissForm,
+                        onDraftChangeExternal = onMovementDraftChange,
+                        onSaveExternal = onMovementSave
+                    )
+                }
+
                 MovementFormSheetContent(
-                    mode = state.movementForm.mode,
-                    draft = state.movementForm.draft,
-                    onChange = onMovementDraftChange,
-                    onCancel = onDismissForm,
-                    onSave = onMovementSave
+                    state = formMv.state,
+                    mv = formMv,
+                            wallets = state.wallets
                 )
             }
         }
@@ -233,7 +247,7 @@ class WalletBreakdownViewModel : ViewModel() {
         _state.value = st.copy(
             movementForm = WalletBreakdownMovementFormState(
                 mode = MovementFormMode.CREATE,
-                draft = MovementDraft(wallet = WalletFilter.METAMASK)
+                draft = MovementDraft()
             )
         )
     }

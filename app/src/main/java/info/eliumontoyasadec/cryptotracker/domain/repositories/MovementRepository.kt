@@ -9,4 +9,9 @@ interface MovementRepository {
     suspend fun update(movementId: Long, update: Movement)
     suspend fun delete(movementId: Long)
 
+    suspend fun list(
+        portfolioId: Long,
+        walletId: Long? = null,
+        assetId: String? = null
+    ): List<Movement>
 }

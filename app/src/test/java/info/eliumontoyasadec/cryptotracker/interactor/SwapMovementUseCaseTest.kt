@@ -208,6 +208,13 @@ class SwapMovementUseCaseTest {
         override suspend fun findById(movementId: Long): Movement? = null
         override suspend fun update(movementId: Long, update: Movement) = Unit
         override suspend fun delete(movementId: Long) = Unit
+        override suspend fun list(
+            portfolioId: Long,
+            walletId: Long?,
+            assetId: String?
+        ): List<Movement> {
+            TODO("Not yet implemented")
+        }
     }
 
     private class FakeHoldingRepoMulti : HoldingRepository {

@@ -1,4 +1,5 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package info.eliumontoyasadec.cryptotracker.ui.screens.movements
 
 import androidx.compose.foundation.layout.Arrangement
@@ -22,25 +23,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import info.eliumontoyasadec.cryptotracker.ui.screens.CryptoFilter
-import info.eliumontoyasadec.cryptotracker.ui.screens.WalletFilter
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import info.eliumontoyasadec.cryptotracker.domain.model.Wallet
 
 enum class MovementFormMode { CREATE, EDIT }
 
 // Draft “UI-only” (después lo mapearás a tu MovementRow / Movement domain)
 data class MovementDraft(
     val id: String? = null,
-    val wallet: WalletFilter = WalletFilter.METAMASK,
+    val walletId: Long? = null,
     val crypto: CryptoFilter = CryptoFilter.BTC,
     val type: MovementTypeUi = MovementTypeUi.BUY,
     val quantityText: String = "",
@@ -62,61 +55,51 @@ enum class MovementTypeUi(val label: String) {
 
 @Composable
 fun MovementFormSheetContent(
-    mode: MovementFormMode,
-    draft: MovementDraft,
-    onChange: (MovementDraft) -> Unit,
-    onCancel: () -> Unit,
-    onSave: () -> Unit
+    state: MovementFormUiState,
+    mv: MovementFormModelView,
+    wallets: List<Wallet>
 ) {
-    val qtyRaw = draft.quantityText.trim()
-    val priceRaw = draft.priceText.trim()
-    val feeRaw = draft.feeQuantityText.trim()
+    val draft = state.draft
 
-    val qtyValue = qtyRaw.toDoubleOrNull()
-    val priceValue = if (priceRaw.isBlank()) 0.0 else priceRaw.toDoubleOrNull()
-    val feeValue = if (feeRaw.isBlank()) 0.0 else feeRaw.toDoubleOrNull()
-
-    val qtyOk = (qtyValue != null && qtyValue > 0.0)
-    val priceOk = (priceRaw.isBlank() || (priceValue != null && priceValue >= 0.0))
-    val feeOk = (feeRaw.isBlank() || (feeValue != null && feeValue >= 0.0))
-
-    val canSave = qtyOk && priceOk && feeOk
-
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
-
-    val formatter = remember {
-        DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault())
-    }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = state.selectedDateMillis
+    )
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .testTag(MovementTags.FormSheet),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = if (mode == MovementFormMode.CREATE) "Nuevo movimiento" else "Editar movimiento",
+            text = if (state.mode == MovementFormMode.CREATE) "Nuevo movimiento" else "Editar movimiento",
             style = MaterialTheme.typography.titleLarge
         )
-        Text("(sin wiring) Este formulario actualiza estado fake.", style = MaterialTheme.typography.bodySmall)
+        Text(
+            "(sin wiring) Este formulario actualiza estado fake.",
+            style = MaterialTheme.typography.bodySmall
+        )
 
         HorizontalDivider()
 
         Text("Cartera", style = MaterialTheme.typography.labelLarge)
-        ChipRow(
-            options = WalletFilter.entries.filter { it != WalletFilter.ALL },
-            selected = draft.wallet,
-            labelOf = { it.label },
-            onSelect = { onChange(draft.copy(wallet = it)) }
-        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(wallets, key = { it.walletId }) { w ->
+                FilterChip(
+                    selected = draft.walletId == w.walletId,
+                    onClick = { mv.onWalletSelect(w.walletId) },
+                    label = { Text(w.name) }
+                )
+            }
+        }
 
         Text("Crypto", style = MaterialTheme.typography.labelLarge)
         ChipRow(
             options = CryptoFilter.entries.filter { it != CryptoFilter.ALL },
             selected = draft.crypto,
             labelOf = { it.label },
-            onSelect = { onChange(draft.copy(crypto = it)) }
+            onSelect = { mv.onCryptoSelect(it) }
         )
 
         Text("Tipo", style = MaterialTheme.typography.labelLarge)
@@ -124,52 +107,54 @@ fun MovementFormSheetContent(
             options = MovementTypeUi.entries,
             selected = draft.type,
             labelOf = { it.label },
-            onSelect = { onChange(draft.copy(type = it)) }
+            onSelect = { mv.onTypeSelect(it) },
+            modifier = Modifier.testTag(MovementTags.FormTypeChips),
+            chipTagOf = { MovementTags.formTypeChip(it.name) }
         )
 
         OutlinedTextField(
             value = draft.quantityText,
-            onValueChange = { onChange(draft.copy(quantityText = it)) },
+            onValueChange = { mv.onQuantityChange(it) },
             label = { Text("Cantidad") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(MovementTags.FormQuantity),
             singleLine = true,
-            isError = !qtyOk,
-            supportingText = {
-                if (!qtyOk) {
-                    Text(if (qtyRaw.isBlank()) "Requerido" else "Cantidad inválida")
-                }
-            }
+            isError = state.quantityError != null,
+            supportingText = { state.quantityError?.let { Text(it) } }
         )
 
         OutlinedTextField(
             value = draft.priceText,
-            onValueChange = { onChange(draft.copy(priceText = it)) },
+            onValueChange = { mv.onPriceChange(it) },
             label = { Text("Precio (USD) - opcional") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(MovementTags.FormPrice),
             singleLine = true,
-            isError = !priceOk,
-            supportingText = {
-                if (!priceOk) Text("Precio inválido")
-            }
+            isError = state.priceError != null,
+            supportingText = { state.priceError?.let { Text(it) } }
         )
 
         OutlinedTextField(
             value = draft.feeQuantityText,
-            onValueChange = { onChange(draft.copy(feeQuantityText = it)) },
+            onValueChange = { mv.onFeeChange(it) },
             label = { Text("Fee (qty) - opcional") },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(MovementTags.FormFee),
             singleLine = true,
-            isError = !feeOk,
-            supportingText = {
-                if (!feeOk) Text("Fee inválido")
-            }
+            isError = state.feeError != null,
+            supportingText = { state.feeError?.let { Text(it) } }
         )
 
         OutlinedTextField(
             value = draft.notes,
-            onValueChange = { onChange(draft.copy(notes = it)) },
+            onValueChange = { mv.onNotesChange(it) },
             label = { Text("Notas") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(MovementTags.FormNotes)
         )
 
         Row(
@@ -180,31 +165,24 @@ fun MovementFormSheetContent(
                 text = "Fecha: ${draft.dateLabel}",
                 style = MaterialTheme.typography.bodySmall
             )
-            OutlinedButton(onClick = { showDatePicker = true }) {
+            OutlinedButton(
+                onClick = { mv.openDatePicker() },
+                modifier = Modifier.testTag(MovementTags.FormPickDate)
+            ) {
                 Text("Elegir")
             }
         }
 
-        if (showDatePicker) {
+        if (state.showDatePicker) {
             DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
+                onDismissRequest = { mv.dismissDatePicker() },
                 confirmButton = {
                     TextButton(
-                        onClick = {
-                            val millis = datePickerState.selectedDateMillis
-                            if (millis != null) {
-                                val localDate = Instant.ofEpochMilli(millis)
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate()
-                                val label = formatter.format(localDate)
-                                onChange(draft.copy(dateLabel = label))
-                            }
-                            showDatePicker = false
-                        }
+                        onClick = { mv.onDatePicked(datePickerState.selectedDateMillis) }
                     ) { Text("Aceptar") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                    TextButton(onClick = { mv.dismissDatePicker() }) { Text("Cancelar") }
                 }
             ) {
                 DatePicker(state = datePickerState)
@@ -217,8 +195,16 @@ fun MovementFormSheetContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            TextButton(onClick = onCancel) { Text("Cancelar") }
-            Button(onClick = onSave, enabled = canSave) { Text("Guardar") }
+            TextButton(
+                onClick = { mv.onCancel() },
+                modifier = Modifier.testTag(MovementTags.FormCancel)
+            ) { Text("Cancelar") }
+
+            Button(
+                onClick = { mv.onSave() },
+                enabled = state.canSave,
+                modifier = Modifier.testTag(MovementTags.FormSave)
+            ) { Text("Guardar") }
         }
 
         Spacer(Modifier.height(12.dp))
@@ -230,11 +216,20 @@ private fun <T> ChipRow(
     options: List<T>,
     selected: T,
     labelOf: (T) -> String,
-    onSelect: (T) -> Unit
+    onSelect: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    chipTagOf: ((T) -> String)? = null
 ) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         items(options) { opt ->
+            val chipModifier =
+                chipTagOf?.let { Modifier.testTag(it(opt)) } ?: Modifier
+
             FilterChip(
+                modifier = chipModifier,
                 selected = opt == selected,
                 onClick = { onSelect(opt) },
                 label = { Text(labelOf(opt)) }
