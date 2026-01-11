@@ -8,7 +8,6 @@ import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMoveme
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMovementUseCase
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.LoadMovementsResult
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.LoadMovementsUseCase
-import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.MoveBetweenWalletsUseCase
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.RegisterMovementCommand
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.RegisterMovementResult
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.RegisterMovementUseCase
@@ -17,6 +16,10 @@ import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.SwapMoveme
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.SwapMovementUseCase
 import info.eliumontoyasadec.cryptotracker.domain.model.Movement
 import info.eliumontoyasadec.cryptotracker.domain.model.MovementType
+import info.eliumontoyasadec.cryptotracker.domain.model.Portfolio
+import info.eliumontoyasadec.cryptotracker.domain.model.Wallet
+import info.eliumontoyasadec.cryptotracker.domain.repositories.PortfolioRepository
+import info.eliumontoyasadec.cryptotracker.domain.repositories.WalletRepository
 import info.eliumontoyasadec.cryptotracker.ui.admin.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -44,7 +47,6 @@ class MovementsViewModelTest {
     private val editMovement: EditMovementUseCase = mockk()
     private val deleteMovement: DeleteMovementUseCase = mockk()
     private val swapMovement: SwapMovementUseCase = mockk()
-    private val moveBetweenWallets: MoveBetweenWalletsUseCase = mockk()
     private val loadMovements: LoadMovementsUseCase = mockk()
 
     private lateinit var vm: MovementsViewModel
@@ -59,9 +61,29 @@ class MovementsViewModelTest {
         edit: EditMovementUseCase? = editMovement,
         delete: DeleteMovementUseCase? = deleteMovement,
         swap: SwapMovementUseCase? = swapMovement,
-        moveBetween: MoveBetweenWalletsUseCase? = moveBetweenWallets,
         portfolioId: Long = 777L
     ): MovementsViewModel {
+        val portfolioRepo: PortfolioRepository = mockk()
+        val walletRepo: WalletRepository = mockk()
+
+        val defaultPortfolio = Portfolio(
+            portfolioId = portfolioId,
+            name = "Default",
+            description = null,
+            isDefault = true
+        )
+
+        val w10 = mockWallet(id = 10L, portfolioId = portfolioId, name = "MetaMask", isMain = true)
+        val w20 = mockWallet(id = 20L, portfolioId = portfolioId, name = "Bybit", isMain = false)
+        val w30 = mockWallet(id = 30L, portfolioId = portfolioId, name = "Phantom", isMain = false)
+        val wallets = listOf(w10, w20, w30)
+
+        coEvery { portfolioRepo.getDefault() } returns defaultPortfolio
+        coEvery { walletRepo.getByPortfolio(portfolioId) } returns wallets
+        coEvery { walletRepo.findById(10L) } returns w10
+        coEvery { walletRepo.findById(20L) } returns w20
+        coEvery { walletRepo.findById(30L) } returns w30
+
         return MovementsViewModel(
             mode = mode,
             loadMovements = loadMovements,
@@ -69,31 +91,24 @@ class MovementsViewModelTest {
             editMovement = edit,
             deleteMovement = delete,
             swapMovement = swap,
-            moveBetweenWallets = moveBetween,
-            portfolioIdProvider = { portfolioId },
-
-            // ✅ Resolver real: enum -> id. ALL -> null.
-            walletIdResolver = { wf ->
-                when (wf) {
-                    WalletFilter.ALL -> null
-                    WalletFilter.METAMASK -> 10L
-                    WalletFilter.BYBIT -> 20L
-                    WalletFilter.PHANTOM -> 30L
-                }
-            },
-
-            // ✅ Resolver real: enum -> assetId. ALL -> null.
-            assetIdResolver = { cf ->
-                when (cf) {
-                    CryptoFilter.ALL -> null
-                    CryptoFilter.BTC -> "BTC"
-                    CryptoFilter.ETH -> "ETH"
-                    CryptoFilter.SOL -> "SOL"
-                    CryptoFilter.ALGO -> "ALGO"
-                    CryptoFilter.AIXBT -> "AIXBT"
-                }
-            }
+            portfolioRepo = portfolioRepo,
+            walletRepo = walletRepo,
+            assetIdResolver = { cf -> if (cf == CryptoFilter.ALL) null else cf.label }
         )
+    }
+
+    private fun mockWallet(
+        id: Long,
+        portfolioId: Long,
+        name: String,
+        isMain: Boolean
+    ): Wallet {
+        val w: Wallet = mockk(relaxed = true)
+        io.mockk.every { w.walletId } returns id
+        io.mockk.every { w.portfolioId } returns portfolioId
+        io.mockk.every { w.name } returns name
+        io.mockk.every { w.isMain } returns isMain
+        return w
     }
 
     // Helpers para evitar smart-cast entre módulos
@@ -152,7 +167,7 @@ class MovementsViewModelTest {
     fun `initial state - has ALL filters and non-empty rows`() = runTest {
         advanceUntilIdle()
         val st = vm.state.value
-        assertEquals(WalletFilter.ALL, st.selectedWallet)
+        assertEquals(null, st.selectedWalletId)
         assertEquals(CryptoFilter.ALL, st.selectedCrypto)
         assertTrue(st.rows.isNotEmpty())
         assertEquals(st.rows, st.filteredRows)
@@ -167,13 +182,13 @@ class MovementsViewModelTest {
 
     @Test
     fun `selectWallet - updates selectedWallet and filteredRows`() = runTest {
-        vm.selectWallet(WalletFilter.METAMASK)
+        vm.selectWallet(10L)
         advanceUntilIdle()
 
         val st = vm.state.value
-        assertEquals(WalletFilter.METAMASK, st.selectedWallet)
+        assertEquals(10L, st.selectedWalletId)
         assertTrue(st.filteredRows.isNotEmpty())
-        assertTrue(st.filteredRows.all { it.wallet == WalletFilter.METAMASK })
+        assertTrue(st.filteredRows.all { it.walletId == 10L })
     }
 
     @Test
@@ -189,15 +204,15 @@ class MovementsViewModelTest {
 
     @Test
     fun `selectWallet and selectCrypto - applies AND filter`() = runTest {
-        vm.selectWallet(WalletFilter.METAMASK)
+        vm.selectWallet(10L)
         vm.selectCrypto(CryptoFilter.BTC)
         advanceUntilIdle()
 
         val st = vm.state.value
-        assertEquals(WalletFilter.METAMASK, st.selectedWallet)
+        assertEquals(10L, st.selectedWalletId)
         assertEquals(CryptoFilter.BTC, st.selectedCrypto)
         assertTrue(st.filteredRows.isNotEmpty())
-        assertTrue(st.filteredRows.all { it.wallet == WalletFilter.METAMASK && it.crypto == CryptoFilter.BTC })
+        assertTrue(st.filteredRows.all { it.walletId == 10L && it.crypto == CryptoFilter.BTC })
     }
 
     // -------------------------
@@ -242,7 +257,8 @@ class MovementsViewModelTest {
         val form = st.requireMovementForm()
         assertEquals(MovementFormMode.EDIT, form.mode)
         assertEquals(row.id, form.draft.id)
-        assertEquals(row.wallet, form.draft.wallet)
+        // ✅ Adaptado a firma actual: el draft trabaja con walletId (no con walletName/objeto wallet)
+        assertEquals(row.walletId, form.draft.walletId)
         assertEquals(row.crypto, form.draft.crypto)
         assertEquals(row.dateLabel, form.draft.dateLabel)
         assertEquals(row.details, form.draft.notes)
@@ -278,7 +294,7 @@ class MovementsViewModelTest {
 
         val draft = vm.state.value.requireMovementForm().draft.copy(
             id = "tmp-1",
-            wallet = WalletFilter.METAMASK,
+            walletId = 10L,
             crypto = CryptoFilter.BTC,
             type = MovementTypeUi.DEPOSIT,
             quantityText = "0.5",
@@ -336,7 +352,7 @@ class MovementsViewModelTest {
         vm.changeMovementDraft(
             vm.state.value.requireMovementForm().draft.copy(
                 id = "tmp-1",
-                wallet = WalletFilter.METAMASK,
+                walletId = 10L,
                 crypto = CryptoFilter.BTC,
                 type = MovementTypeUi.DEPOSIT,
                 quantityText = "1.5",
@@ -402,7 +418,7 @@ class MovementsViewModelTest {
         vm.changeMovementDraft(
             vm.state.value.requireMovementForm().draft.copy(
                 id = "tmp-1",
-                wallet = WalletFilter.METAMASK,
+                walletId = 10L,
                 crypto = CryptoFilter.BTC,
                 type = MovementTypeUi.DEPOSIT,
                 quantityText = "1",
@@ -486,8 +502,7 @@ class MovementsViewModelTest {
 
         vm.changeSwapDraft(
             vm.state.value.requireSwapForm().draft.copy(
-                id = "swap-1",
-                wallet = WalletFilter.METAMASK,
+                id = 10L,
                 fromCrypto = CryptoFilter.ALGO,
                 toCrypto = CryptoFilter.AIXBT,
                 fromQtyText = "5",
@@ -502,7 +517,7 @@ class MovementsViewModelTest {
         val st = vm.state.value
         assertNull(st.swapForm)
         assertEquals(before.size + 1, st.rows.size)
-        assertEquals("swap-1", st.rows.first().id)
+        assertEquals("10", st.rows.first().id)
     }
 
     @Test
@@ -513,8 +528,7 @@ class MovementsViewModelTest {
         vm.startCreate()
         vm.changeSwapDraft(
             vm.state.value.requireSwapForm().draft.copy(
-                id = "swap-1",
-                wallet = WalletFilter.METAMASK,
+                id = 10L,
                 fromCrypto = CryptoFilter.ALGO,
                 toCrypto = CryptoFilter.AIXBT,
                 fromQtyText = "5",
@@ -597,7 +611,7 @@ class MovementsViewModelTest {
         vm.changeMovementDraft(
             vm.state.value.requireMovementForm().draft.copy(
                 id = "tmp-del",
-                wallet = WalletFilter.METAMASK,
+                walletId = 10L,
                 crypto = CryptoFilter.BTC,
                 type = MovementTypeUi.DEPOSIT,
                 quantityText = "1",

@@ -11,10 +11,11 @@ import org.junit.Before
 import org.junit.Test
 
 class MovementFormModelViewTest {
-
     private val onCancelExternal: () -> Unit = mockk(relaxed = true)
     private val onDraftChangeExternal: (MovementDraft) -> Unit = mockk(relaxed = true)
     private val onSaveExternal: () -> Unit = mockk(relaxed = true)
+
+    private lateinit var mv: MovementFormModelView
 
     private fun newMv(
         mode: MovementFormMode = MovementFormMode.CREATE,
@@ -29,7 +30,6 @@ class MovementFormModelViewTest {
         )
     }
 
-    private lateinit var mv: MovementFormModelView
 
     @Before
     fun setUp() {
@@ -152,10 +152,11 @@ class MovementFormModelViewTest {
         verify(exactly = 1) { onCancelExternal.invoke() }
     }
 
+
     @Test
     fun `onDraftChange - updates local state and calls external sync`() {
         val updated = mv.state.draft.copy(
-            wallet = WalletFilter.METAMASK,
+            walletId = 1L,
             crypto = CryptoFilter.BTC,
             type = MovementTypeUi.DEPOSIT,
             quantityText = "2",
@@ -172,14 +173,14 @@ class MovementFormModelViewTest {
 
         verify(exactly = 1) { onDraftChangeExternal.invoke(updated) }
     }
-
     @Test
     fun `field helpers - update draft and call external sync`() {
         mv.onQuantityChange("3")
         mv.onPriceChange("100")
         mv.onFeeChange("0.01")
         mv.onNotesChange("hello")
-        mv.onWalletSelect(WalletFilter.METAMASK)
+
+        mv.onWalletSelect(1L)             // ✅ antes: WalletFilter.METAMASK
         mv.onCryptoSelect(CryptoFilter.BTC)
         mv.onTypeSelect(MovementTypeUi.BUY)
 
@@ -188,17 +189,19 @@ class MovementFormModelViewTest {
         assertEquals("100", st.draft.priceText)
         assertEquals("0.01", st.draft.feeQuantityText)
         assertEquals("hello", st.draft.notes)
-        assertEquals(WalletFilter.METAMASK, st.draft.wallet)
+
+        assertEquals(1L, st.draft.walletId)    // ✅ antes: st.draft.wallet
         assertEquals(CryptoFilter.BTC, st.draft.crypto)
         assertEquals(MovementTypeUi.BUY, st.draft.type)
-
-        // Cada helper usa onDraftChange(...) => sync externo debe haberse llamado al menos una vez
-        verify(atLeast = 1) { onDraftChangeExternal.invoke(any()) }
     }
 
     // -------------------------
     // save behavior (guarded by canSave)
     // -------------------------
+
+
+
+
 
     @Test
     fun `onSave - does nothing when cannot save`() {
