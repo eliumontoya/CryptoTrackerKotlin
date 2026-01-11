@@ -8,7 +8,6 @@ import androidx.compose.runtime.remember
 import info.eliumontoyasadec.cryptotracker.data.queries.RoomPortfolioQueries
 import info.eliumontoyasadec.cryptotracker.data.seed.CatalogSeeder
 import info.eliumontoyasadec.cryptotracker.data.seed.DatabaseWiper
-import info.eliumontoyasadec.cryptotracker.domain.repositories.TransactionRunner
 import info.eliumontoyasadec.cryptotracker.room.db.AppDatabase
 import info.eliumontoyasadec.cryptotracker.room.repositories.CryptoRepositoryRoom
 import info.eliumontoyasadec.cryptotracker.room.repositories.FiatRepositoryRoom

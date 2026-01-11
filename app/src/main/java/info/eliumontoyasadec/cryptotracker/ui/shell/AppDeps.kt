@@ -4,7 +4,12 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModelProvider
 import info.eliumontoyasadec.cryptotracker.data.seed.CatalogSeeder
 import info.eliumontoyasadec.cryptotracker.data.seed.DatabaseWiper
-import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.*
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.DeleteMovementUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.EditMovementUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.LoadMovementsUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.MoveBetweenWalletsUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.RegisterMovementUseCase
+import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.SwapMovementUseCase
 import info.eliumontoyasadec.cryptotracker.domain.queries.PortfolioQueries
 import info.eliumontoyasadec.cryptotracker.domain.repositories.CryptoRepository
 import info.eliumontoyasadec.cryptotracker.domain.repositories.FiatRepository
@@ -16,9 +21,6 @@ import info.eliumontoyasadec.cryptotracker.domain.repositories.WalletRepository
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.CryptoFilter
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementMode
 import info.eliumontoyasadec.cryptotracker.ui.screens.movements.MovementsViewModelFactory
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.WalletFilter
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.defaultMovementAssetId
-import info.eliumontoyasadec.cryptotracker.ui.screens.movements.defaultMovementWalletId
 
 
 data class AppDeps(
@@ -43,10 +45,15 @@ data class AppDeps(
      */
     fun movementsViewModelFactory(
         mode: MovementMode,
-        portfolioIdProvider: () -> Long = { 1L },
-        walletIdResolver: (WalletFilter) -> Long? = ::defaultMovementWalletId,
-        assetIdResolver: (CryptoFilter) -> String? = ::defaultMovementAssetId
+        assetIdResolver: (CryptoFilter) -> String?
     ): ViewModelProvider.Factory {
+        val loadUC = LoadMovementsUseCase(
+            portfolioRepo = portfolioRepository,
+            walletRepo = walletRepository,
+            assetRepo = cryptoRepository,
+            movementRepo = movementRepository
+        )
+
         val registerUC = RegisterMovementUseCase(
             portfolioRepo = portfolioRepository,
             walletRepo = walletRepository,
@@ -84,14 +91,15 @@ data class AppDeps(
 
         return MovementsViewModelFactory(
             mode = mode,
+            loadMovements = loadUC,
             registerMovement = registerUC,
             editMovement = editUC,
             deleteMovement = deleteUC,
             swapMovement = swapUC,
             moveBetweenWallets = moveUC,
-            portfolioIdProvider = portfolioIdProvider,
-            walletIdResolver = walletIdResolver,
-            assetIdResolver = assetIdResolver
+            assetIdResolver = assetIdResolver,
+            portfolioRepo = portfolioRepository,
+            walletRepo = walletRepository
         )
     }
 }

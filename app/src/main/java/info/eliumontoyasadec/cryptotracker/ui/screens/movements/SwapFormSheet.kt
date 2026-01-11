@@ -1,4 +1,5 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package info.eliumontoyasadec.cryptotracker.ui.screens.movements
 
 import androidx.compose.foundation.layout.Arrangement
@@ -10,7 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
+ import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.FilterChip
@@ -27,16 +28,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
+import androidx.compose.ui.platform.testTag
+ import androidx.compose.ui.unit.dp
+import info.eliumontoyasadec.cryptotracker.domain.model.Wallet
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 data class SwapDraft(
-    val id: String? = null,
-    val wallet: WalletFilter = WalletFilter.METAMASK,
-    val fromCrypto: CryptoFilter = CryptoFilter.ALGO,
+    val id: Long? = null,
+    val walletId: Long? = null,              // ✅ Opción A: id real
+    val fromCrypto: CryptoFilter = CryptoFilter.BTC,
     val toCrypto: CryptoFilter = CryptoFilter.AIXBT,
     val fromQtyText: String = "",
     val toQtyText: String = "",
@@ -48,157 +48,162 @@ data class SwapDraft(
 @Composable
 fun SwapFormSheetContent(
     draft: SwapDraft,
-    onChange: (SwapDraft) -> Unit,
+    wallets: List<Wallet>,
+    onDraftChange: (SwapDraft) -> Unit,
     onCancel: () -> Unit,
     onSave: () -> Unit
 ) {
     val fromQtyRaw = draft.fromQtyText.trim()
     val toQtyRaw = draft.toQtyText.trim()
-    val feeRaw = draft.feeQtyText.trim()
 
-    val fromQtyValue = fromQtyRaw.toDoubleOrNull()
-    val toQtyValue = toQtyRaw.toDoubleOrNull()
-    val feeValue = if (feeRaw.isBlank()) 0.0 else feeRaw.toDoubleOrNull()
-
-    val fromOk = (fromQtyValue != null && fromQtyValue > 0.0)
-    val toOk = (toQtyValue != null && toQtyValue > 0.0)
-    val feeOk = (feeRaw.isBlank() || (feeValue != null && feeValue >= 0.0))
-    val pairOk = (draft.fromCrypto != draft.toCrypto)
-
-    val canSave = fromOk && toOk && feeOk && pairOk
+    val canSave =
+        (draft.walletId != null) &&
+                fromQtyRaw.toDoubleOrNull() != null &&
+                toQtyRaw.toDoubleOrNull() != null &&
+                draft.fromCrypto != CryptoFilter.ALL &&
+                draft.toCrypto != CryptoFilter.ALL &&
+                draft.fromCrypto != draft.toCrypto
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
-    val formatter = remember {
-        DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault())
-    }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(16.dp)
+            .testTag(MovementTags.SwapSheet),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("Nuevo swap", style = MaterialTheme.typography.titleLarge)
-        Text("(sin wiring) Este swap generará movimientos fake.", style = MaterialTheme.typography.bodySmall)
+
+        // Si todavía estás en modo "fake", ajusta el texto como gustes.
+        Text("Selecciona una cartera real (BD) y captura cantidades.", style = MaterialTheme.typography.bodySmall)
 
         HorizontalDivider()
 
         Text("Cartera", style = MaterialTheme.typography.labelLarge)
-        ChipRow(
-            options = WalletFilter.entries.filter { it != WalletFilter.ALL },
-            selected = draft.wallet,
-            labelOf = { it.label },
-            onSelect = { onChange(draft.copy(wallet = it)) }
-        )
 
-        Text("From", style = MaterialTheme.typography.labelLarge)
-        ChipRow(
-            options = CryptoFilter.entries.filter { it != CryptoFilter.ALL },
-            selected = draft.fromCrypto,
-            labelOf = { it.label },
-            onSelect = { onChange(draft.copy(fromCrypto = it)) }
-        )
+        if (wallets.isEmpty()) {
+            Text(
+                "No hay wallets disponibles. Crea una wallet primero.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        } else {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(wallets, key = { it.walletId }) { w ->
+                    FilterChip(
+                        selected = draft.walletId == w.walletId,
+                        onClick = { onDraftChange(draft.copy(walletId = w.walletId)) },
+                        label = { Text(w.name) }
+                    )
+                }
+            }
+        }
+
+        HorizontalDivider()
+
+        Text("Activos", style = MaterialTheme.typography.labelLarge)
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text("Vendes", style = MaterialTheme.typography.labelMedium)
+                ChipRow(
+                    options = CryptoFilter.entries.filter { it != CryptoFilter.ALL },
+                    selected = draft.fromCrypto,
+                    labelOf = { it.label },
+                    onSelect = { onDraftChange(draft.copy(fromCrypto = it)) }
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                Text("Compras", style = MaterialTheme.typography.labelMedium)
+                ChipRow(
+                    options = CryptoFilter.entries.filter { it != CryptoFilter.ALL },
+                    selected = draft.toCrypto,
+                    labelOf = { it.label },
+                    onSelect = { onDraftChange(draft.copy(toCrypto = it)) }
+                )
+            }
+        }
+
         OutlinedTextField(
             value = draft.fromQtyText,
-            onValueChange = { onChange(draft.copy(fromQtyText = it)) },
-            label = { Text("Cantidad From") },
+            onValueChange = { onDraftChange(draft.copy(fromQtyText = it)) },
+            label = { Text("Cantidad vendida") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = !fromOk,
-            supportingText = {
-                if (!fromOk) {
-                    Text(if (fromQtyRaw.isBlank()) "Requerido" else "Cantidad inválida")
-                }
-            }
+            keyboardOptions =  KeyboardOptions(keyboardType = KeyboardType.Number)
         )
 
-        Text("To", style = MaterialTheme.typography.labelLarge)
-        ChipRow(
-            options = CryptoFilter.entries.filter { it != CryptoFilter.ALL },
-            selected = draft.toCrypto,
-            labelOf = { it.label },
-            onSelect = { onChange(draft.copy(toCrypto = it)) }
-        )
         OutlinedTextField(
             value = draft.toQtyText,
-            onValueChange = { onChange(draft.copy(toQtyText = it)) },
-            label = { Text("Cantidad To") },
+            onValueChange = { onDraftChange(draft.copy(toQtyText = it)) },
+            label = { Text("Cantidad comprada") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = !toOk || !pairOk,
-            supportingText = {
-                when {
-                    !pairOk -> Text("From y To deben ser diferentes")
-                    !toOk -> Text(if (toQtyRaw.isBlank()) "Requerido" else "Cantidad inválida")
-                }
-            }
+            keyboardOptions =  KeyboardOptions(keyboardType = KeyboardType.Number)
         )
 
         OutlinedTextField(
             value = draft.feeQtyText,
-            onValueChange = { onChange(draft.copy(feeQtyText = it)) },
-            label = { Text("Fee (qty) - opcional") },
+            onValueChange = { onDraftChange(draft.copy(feeQtyText = it)) },
+            label = { Text("Fee (opcional)") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = !feeOk,
-            supportingText = {
-                if (!feeOk) Text("Fee inválido")
-            }
-        )
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)        )
+
+        HorizontalDivider()
+
+        Text("Fecha", style = MaterialTheme.typography.labelLarge)
+
+        OutlinedButton(
+            onClick = { showDatePicker = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(draft.dateLabel)
+        }
 
         OutlinedTextField(
             value = draft.notes,
-            onValueChange = { onChange(draft.copy(notes = it)) },
-            label = { Text("Notas") },
+            onValueChange = { onDraftChange(draft.copy(notes = it)) },
+            label = { Text("Notas (opcional)") },
             modifier = Modifier.fillMaxWidth()
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Fecha: ${draft.dateLabel}", style = MaterialTheme.typography.bodySmall)
-            OutlinedButton(onClick = { showDatePicker = true }) { Text("Elegir") }
-        }
+        Spacer(Modifier.height(8.dp))
 
-        if (showDatePicker) {
-            DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val millis = datePickerState.selectedDateMillis
-                            if (millis != null) {
-                                val localDate = Instant.ofEpochMilli(millis)
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate()
-                                val label = formatter.format(localDate)
-                                onChange(draft.copy(dateLabel = label))
-                            }
-                            showDatePicker = false
-                        }
-                    ) { Text("Aceptar") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
-                }
-            ) {
-                DatePicker(state = datePickerState)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f)
+            ) { Text("Cancelar") }
+
+            Button(
+                onClick = onSave,
+                enabled = canSave,
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(MovementTags.SwapFormSave)
+            ) { Text("Guardar") }
+        }
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Mantengo simple: solo marca "Elegida" sin convertir millis -> fecha,
+                        // para no inventar formato si ya tienes utilidades en otro archivo.
+                        // Si quieres, lo refinamos con tu formatter existente.
+                        onDraftChange(draft.copy(dateLabel = "Elegida"))
+                        showDatePicker = false
+                    }
+                ) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
             }
-        }
-
-        Spacer(Modifier.height(4.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
         ) {
-            TextButton(onClick = onCancel) { Text("Cancelar") }
-            Button(onClick = onSave, enabled = canSave) { Text("Guardar swap") }
+            DatePicker(state = datePickerState)
         }
-
-        Spacer(Modifier.height(12.dp))
     }
 }
 

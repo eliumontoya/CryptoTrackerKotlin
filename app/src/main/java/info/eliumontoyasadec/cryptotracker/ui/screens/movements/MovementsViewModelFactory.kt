@@ -8,18 +8,20 @@ import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.LoadMoveme
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.MoveBetweenWalletsUseCase
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.RegisterMovementUseCase
 import info.eliumontoyasadec.cryptotracker.domain.interactor.movement.SwapMovementUseCase
+import info.eliumontoyasadec.cryptotracker.domain.repositories.PortfolioRepository
+import info.eliumontoyasadec.cryptotracker.domain.repositories.WalletRepository
 
 class MovementsViewModelFactory(
     private val mode: MovementMode,
-    private val loadMovements: LoadMovementsUseCase? = null,
+    private val loadMovements: LoadMovementsUseCase,
     private val registerMovement: RegisterMovementUseCase? = null,
     private val editMovement: EditMovementUseCase? = null,
     private val deleteMovement: DeleteMovementUseCase? = null,
     private val swapMovement: SwapMovementUseCase? = null,
     private val moveBetweenWallets: MoveBetweenWalletsUseCase? = null,
-    private val portfolioIdProvider: () -> Long = { 1L },
-    private val walletIdResolver: (WalletFilter) -> Long? = { null },
-    private val assetIdResolver: (CryptoFilter) -> String? = { null }
+    private val portfolioRepo: PortfolioRepository,
+    private val walletRepo: WalletRepository,
+    private val assetIdResolver: (CryptoFilter) -> String?
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -32,9 +34,8 @@ class MovementsViewModelFactory(
                 editMovement = editMovement,
                 deleteMovement = deleteMovement,
                 swapMovement = swapMovement,
-                moveBetweenWallets = moveBetweenWallets,
-                portfolioIdProvider = portfolioIdProvider,
-                walletIdResolver = walletIdResolver,
+                 portfolioRepo = portfolioRepo,
+                walletRepo = walletRepo,
                 assetIdResolver = assetIdResolver
             ) as T
         }

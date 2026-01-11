@@ -26,13 +26,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import info.eliumontoyasadec.cryptotracker.domain.model.Wallet
 
 enum class MovementFormMode { CREATE, EDIT }
 
 // Draft “UI-only” (después lo mapearás a tu MovementRow / Movement domain)
 data class MovementDraft(
     val id: String? = null,
-    val wallet: WalletFilter = WalletFilter.METAMASK,
+    val walletId: Long? = null,
     val crypto: CryptoFilter = CryptoFilter.BTC,
     val type: MovementTypeUi = MovementTypeUi.BUY,
     val quantityText: String = "",
@@ -55,7 +56,8 @@ enum class MovementTypeUi(val label: String) {
 @Composable
 fun MovementFormSheetContent(
     state: MovementFormUiState,
-    mv: MovementFormModelView
+    mv: MovementFormModelView,
+    wallets: List<Wallet>
 ) {
     val draft = state.draft
 
@@ -82,12 +84,15 @@ fun MovementFormSheetContent(
         HorizontalDivider()
 
         Text("Cartera", style = MaterialTheme.typography.labelLarge)
-        ChipRow(
-            options = WalletFilter.entries.filter { it != WalletFilter.ALL },
-            selected = draft.wallet,
-            labelOf = { it.label },
-            onSelect = { mv.onWalletSelect(it) }
-        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(wallets, key = { it.walletId }) { w ->
+                FilterChip(
+                    selected = draft.walletId == w.walletId,
+                    onClick = { mv.onWalletSelect(w.walletId) },
+                    label = { Text(w.name) }
+                )
+            }
+        }
 
         Text("Crypto", style = MaterialTheme.typography.labelLarge)
         ChipRow(

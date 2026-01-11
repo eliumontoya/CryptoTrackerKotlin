@@ -46,8 +46,8 @@ class MovementFormModelView(
         onDraftChangeExternal(draft)
     }
 
-    fun onWalletSelect(wallet: WalletFilter) {
-        onDraftChange(state.draft.copy(wallet = wallet))
+    fun onWalletSelect(walletId: Long?) {
+        onDraftChange(state.draft.copy(walletId = walletId))
     }
 
     fun onCryptoSelect(crypto: CryptoFilter) {

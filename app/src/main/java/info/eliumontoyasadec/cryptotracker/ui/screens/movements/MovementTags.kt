@@ -24,6 +24,12 @@ object MovementTags {
     const val FormSheet = "movements:form_sheet"
     const val FormSheetContainer = "movements:form_sheet_container"
 
+    const val SwapSheet = "swaps:form_sheet"
+    const val SwapFormSave = "swap:form:save"
+
+    fun swapRow(typeName: String) = "swap_row_$typeName"
+
+
     const val FormTypeChips = "movements:form:type_chips"
     fun formTypeChip(typeName: String) = "movements:form:type:$typeName"
 
